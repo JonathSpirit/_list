@@ -25,42 +25,42 @@ void List<T, TBlockSize>::clear()
 }
 
 template<class T, class TBlockSize>
-void List<T, TBlockSize>::push_back(const T& data)
+void List<T, TBlockSize>::push_back(const T& value)
 {
     auto* place = this->requestFreePlace(InsertionDirections::BACK);
     if (place != nullptr)
     {
-        new (place) T(data);
+        new (place) T(value);
     }
 }
 template<class T, class TBlockSize>
-void List<T, TBlockSize>::push_front(const T& data)
+void List<T, TBlockSize>::push_front(const T& value)
 {
     auto* place = this->requestFreePlace(InsertionDirections::FRONT);
     if (place != nullptr)
     {
-        new (place) T(data);
+        new (place) T(value);
     }
 }
 template<class T, class TBlockSize>
-void List<T, TBlockSize>::push(const T& data)
+void List<T, TBlockSize>::push(const T& value)
 {
     auto* place = this->requestFreePlace();
     if (place != nullptr)
     {
-        new (place) T(data);
+        new (place) T(value);
     }
 }
 
 template<class T, class TBlockSize>
-typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(const iterator& it)
+typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(const iterator& pos)
 {
-    this->freeDataFromBlock(it._block, it._position);
+    this->freeDataFromBlock(pos._block, pos._position);
 
-    if (it._block->_occupiedFlags == 0)
+    if (pos._block->_occupiedFlags == 0)
     {//no more data, we can free the block (only if this is not the last bloc)
-        auto* nextBlock = it._block->_nextBlock;
-        auto* lastBlock = it._block->_lastBlock;
+        auto* nextBlock = pos._block->_nextBlock;
+        auto* lastBlock = pos._block->_lastBlock;
 
         if (nextBlock == nullptr && lastBlock == nullptr)
         {//We can't free the last bloc
@@ -82,10 +82,98 @@ typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(const iterator
             this->g_endBlock = lastBlock;
         }
 
-        this->freeBlock(it._block);
+        this->freeBlock(pos._block);
         return iterator{nextBlock};
     }
-    return iterator{it._block, it._position};
+    return iterator{pos._block, pos._position};
+}
+template<class T, class TBlockSize>
+typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(const iterator& pos, const T& value)
+{
+    auto newPosition = pos._position>>1;
+
+    if (newPosition != 0)
+    {//Check if there is some place to insert
+        if ( !(pos._block->_occupiedFlags & newPosition) )
+        {//Have the place to insert !
+            pos._block->_occupiedFlags |= newPosition;
+            new (pos._data-1) T(value);
+            ++this->g_dataSize;
+            return iterator{pos._block, newPosition};
+        }
+
+        //There is already a value here, we have to shift
+
+        T* data = reinterpret_cast<T*>(&pos._block->_data);
+        for (TBlockSize shiftPos=1; shiftPos!=newPosition; shiftPos<<=1)
+        {
+            if ((shiftPos == 1) && (pos._block->_occupiedFlags & shiftPos))
+            {
+                //Can we put this value inside the last bloc ?
+                if ((pos._block->_lastBlock != nullptr) && !(pos._block->_lastBlock->_occupiedFlags & (static_cast<TBlockSize>(1)<<(sizeof(TBlockSize)*8-1))))
+                {
+                    new (pos._block->_lastBlock->_data+(sizeof(TBlockSize)*8-1)) T(std::move(*data));
+                    data->~T();
+                    pos._block->_lastBlock->_occupiedFlags |= static_cast<TBlockSize>(1)<<(sizeof(TBlockSize)*8-1);
+                    pos._block->_occupiedFlags &=~ shiftPos;
+                }
+                else
+                {//Sadly not, we have to create a new block
+                    auto* oldBlock = pos._block->_lastBlock;
+                    pos._block->_lastBlock = this->allocateBlock();
+                    oldBlock->_nextBlock = pos._block->_lastBlock;
+                    pos._block->_lastBlock->_lastBlock = oldBlock;
+                    pos._block->_lastBlock->_nextBlock = pos._block;
+
+                    new (pos._block->_lastBlock->_data+(sizeof(TBlockSize)*8-1)) T(std::move(*data));
+                    data->~T();
+                    pos._block->_lastBlock->_occupiedFlags |= static_cast<TBlockSize>(1)<<(sizeof(TBlockSize)*8-1);
+                    pos._block->_occupiedFlags &=~ shiftPos;
+                }
+            }
+            else
+            {
+                if (pos._block->_occupiedFlags & (shiftPos<<1))
+                {//we must move the value
+                    new (pos._block->_data) T(std::move(*(pos._block->_data+1)));
+                    (data+1)->~T();
+                    pos._block->_occupiedFlags |= shiftPos;
+                }
+                else
+                {
+                    pos._block->_occupiedFlags &=~ shiftPos;
+                }
+            }
+
+            ++data;
+        }
+
+        //Then we can create the new value
+        pos._block->_occupiedFlags |= newPosition;
+        new (data) T(value);
+        ++this->g_dataSize;
+        return iterator{pos._block, newPosition};
+    }
+    else
+    {
+        newPosition = static_cast<TBlockSize>(1)<<(sizeof(TBlockSize)*8-1);
+
+        //Can we put this value inside the last bloc ?
+        if ((pos._block->_lastBlock == nullptr) || (pos._block->_lastBlock->_occupiedFlags & (static_cast<TBlockSize>(1)<<(sizeof(TBlockSize)*8-1))))
+        {
+            //Sadly not, we have to create a new block
+            auto* oldBlock = pos._block->_lastBlock;
+            pos._block->_lastBlock = this->allocateBlock();
+            oldBlock->_nextBlock = pos._block->_lastBlock;
+            pos._block->_lastBlock->_lastBlock = oldBlock;
+            pos._block->_lastBlock->_nextBlock = pos._block;
+        }
+
+        new (pos._block->_lastBlock->_data+(sizeof(TBlockSize)*8-1)) T(value);
+        pos._block->_lastBlock->_occupiedFlags |= newPosition;
+        ++this->g_dataSize;
+        return iterator{pos._block->_lastBlock, newPosition};
+    }
 }
 
 template<class T, class TBlockSize>

@@ -49,11 +49,12 @@ public:
 
     void clear();
 
-    void push_back(const T& data);
-    void push_front(const T& data);
-    void push(const T& data);
+    void push_back(const T& value);
+    void push_front(const T& value);
+    void push(const T& value);
 
-    iterator erase(const iterator& it);
+    iterator erase(const iterator& pos);
+    iterator insert(const iterator& pos, const T& value);
 
     [[nodiscard]] std::size_t getSize() const;
 

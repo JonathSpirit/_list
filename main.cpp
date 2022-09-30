@@ -151,7 +151,7 @@ void writeResults(const std::string& filename, const std::vector<Results>& resul
 
 int main()
 {
-#if 0
+#if 1
     gg::List<uint8_t, uint32_t> test;
 
     for (int i=0; i<32; ++i)
@@ -165,6 +165,13 @@ int main()
 
     test.push_back(69);
     test.push_back(96);
+
+    itTest = test.begin();
+
+    test.push_front(111);
+    test.push_front(112);
+
+    test.insert(itTest, 113);
 
     std::cout << "---------------" << std::endl;
 
