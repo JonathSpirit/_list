@@ -116,7 +116,7 @@ typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(iterator pos,
             pos._block->_occupiedFlags |= newPosition;
             new (pos._data-1) T(value);
             ++this->g_dataSize;
-            return iterator{pos._block, newPosition};
+            return iterator{pos._block, pos._data-1, newPosition};
         }
 
         //There is already a value here, we have to shift
@@ -163,7 +163,7 @@ typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(iterator pos,
         pos._block->_occupiedFlags |= newPosition;
         new (data) T(value);
         ++this->g_dataSize;
-        return iterator{pos._block, newPosition};
+        return iterator{pos._block, data, newPosition};
     }
     else
     {
@@ -176,10 +176,11 @@ typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(iterator pos,
             this->insertNewBlock(pos._block, InsertionDirections::FRONT);
         }
 
-        new (pos._block->_lastBlock->_data+(sizeof(TBlockSize)*8-1)) T(value);
+        T* data = reinterpret_cast<T*>(pos._block->_lastBlock->_data)+(sizeof(TBlockSize)*8-1);
+        new (data) T(value);
         pos._block->_lastBlock->_occupiedFlags |= newPosition;
         ++this->g_dataSize;
-        return iterator{pos._block->_lastBlock, newPosition};
+        return iterator{pos._block->_lastBlock, data, newPosition};
     }
 }
 
