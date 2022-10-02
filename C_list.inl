@@ -38,7 +38,7 @@ void List<T, TBlockSize>::clear()
 template<class T, class TBlockSize>
 void List<T, TBlockSize>::push_back(const T& value)
 {
-    auto* place = this->requestFreePlace(InsertionDirections::BACK);
+    auto* place = this->requestFreePlace(InsertionDirections::BACK).first;
     if (place != nullptr)
     {
         new (place) T(value);
@@ -47,7 +47,7 @@ void List<T, TBlockSize>::push_back(const T& value)
 template<class T, class TBlockSize>
 void List<T, TBlockSize>::push_front(const T& value)
 {
-    auto* place = this->requestFreePlace(InsertionDirections::FRONT);
+    auto* place = this->requestFreePlace(InsertionDirections::FRONT).first;
     if (place != nullptr)
     {
         new (place) T(value);
@@ -103,8 +103,8 @@ typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(iterator pos,
 {
     if (pos._block == nullptr)
     {//end
-        this->push_back(value);
-        return iterator{this->g_lastBlock, static_cast<TBlockSize>(1)<<(sizeof(TBlockSize)*8-1), iterator::PositionTypes::POS_END};
+        auto data = this->requestFreePlace(InsertionDirections::BACK);
+        return iterator{this->g_lastBlock, data.first, data.second};
     }
 
     TBlockSize newPosition = pos._position>>1;
@@ -240,43 +240,41 @@ T* List<T, TBlockSize>::requestFreePlace()
     return reinterpret_cast<T*>(&this->g_lastBlock->_data);
 }
 template<class T, class TBlockSize>
-T* List<T, TBlockSize>::requestFreePlace(InsertionDirections direction)
+std::pair<T*,TBlockSize> List<T, TBlockSize>::requestFreePlace(InsertionDirections direction)
 {
     if (direction == InsertionDirections::FRONT)
     {
-        Block* oldStartBlock = this->g_startBlock;
-        auto* data = this->requestFreePlaceFromBlock(this->g_startBlock, InsertionDirections::FRONT);
+        auto data = this->requestFreePlaceFromBlock(this->g_startBlock, InsertionDirections::FRONT);
 
-        if (data == nullptr)
+        if (data.first == nullptr)
         {//Need a new block
-            this->g_startBlock->_lastBlock = this->allocateBlock();
-            this->g_startBlock = oldStartBlock->_lastBlock;
-            this->g_startBlock->_nextBlock = oldStartBlock;
+            auto* newBlock = this->insertNewBlock(this->g_startBlock, InsertionDirections::FRONT);
 
-            this->g_startBlock->_occupiedFlags |= static_cast<TBlockSize>(1) << (sizeof(TBlockSize)*8-1);
-            return reinterpret_cast<T*>(&this->g_startBlock->_data)+(sizeof(TBlockSize)*8-1);
+            data.first = reinterpret_cast<T*>(&this->g_startBlock->_data)+(sizeof(TBlockSize)*8-1);
+            data.second = static_cast<TBlockSize>(1) << (sizeof(TBlockSize)*8-1);
+
+            newBlock->_occupiedFlags |= data.second;
         }
         return data;
     }
     else
     {
-        Block* oldLastBlock = this->g_lastBlock;
-        auto* data = this->requestFreePlaceFromBlock(this->g_lastBlock, InsertionDirections::BACK);
+        auto data = this->requestFreePlaceFromBlock(this->g_lastBlock, InsertionDirections::BACK);
 
-        if (data == nullptr)
+        if (data.first == nullptr)
         {//Need a new block
-            this->g_lastBlock->_nextBlock = this->allocateBlock();
-            this->g_lastBlock = oldLastBlock->_nextBlock;
-            this->g_lastBlock->_lastBlock = oldLastBlock;
+            auto* newBlock = this->insertNewBlock(this->g_lastBlock, InsertionDirections::BACK);
 
-            this->g_lastBlock->_occupiedFlags |= 1;
-            return reinterpret_cast<T*>(&this->g_lastBlock->_data);
+            data.first = reinterpret_cast<T*>(&this->g_lastBlock->_data);
+            data.second = 1;
+
+            newBlock->_occupiedFlags |= data.second;
         }
         return data;
     }
 }
 template<class T, class TBlockSize>
-T* List<T, TBlockSize>::requestFreePlaceFromBlock(Block* block, [[maybe_unused]] InsertionDirections direction)
+std::pair<T*,TBlockSize> List<T, TBlockSize>::requestFreePlaceFromBlock(Block* block, InsertionDirections direction)
 {
     if (block->_occupiedFlags != std::numeric_limits<TBlockSize>::max())
     {//There is some place here
@@ -293,7 +291,7 @@ T* List<T, TBlockSize>::requestFreePlaceFromBlock(Block* block, [[maybe_unused]]
                 {
                     ++this->g_dataSize;
                     block->_occupiedFlags |= i;
-                    return data;
+                    return {data, i};
                 }
                 ++data;
             }
@@ -309,13 +307,13 @@ T* List<T, TBlockSize>::requestFreePlaceFromBlock(Block* block, [[maybe_unused]]
                 {
                     ++this->g_dataSize;
                     block->_occupiedFlags |= i;
-                    return data;
+                    return {data, i};
                 }
                 ++data;
             }
         }
     }
-    return nullptr;
+    return {nullptr, 0};
 }
 template<class T, class TBlockSize>
 T* List<T, TBlockSize>::requestFreePlaceFromBlock(Block* block)
@@ -457,6 +455,13 @@ List<T, TBlockSize>::iterator::iterator(Block* block, TBlockSize position, Posit
     case PositionTypes::POS_INPLACE:
         break;
     }
+}
+template<class T, class TBlockSize>
+List<T, TBlockSize>::iterator::iterator(Block* block, T* data, TBlockSize position) :
+        _block(block),
+        _data(data),
+        _position(position)
+{
 }
 
 template<class T, class TBlockSize>

@@ -36,6 +36,7 @@ public:
         };
 
         explicit iterator(Block* block, TBlockSize position=1, PositionTypes positionType=PositionTypes::POS_START);
+        iterator(Block* block, T* data, TBlockSize position);
 
         iterator& operator--();
         iterator& operator++();
@@ -73,8 +74,8 @@ public:
 
 private:
     T* requestFreePlace();
-    T* requestFreePlace(InsertionDirections direction);
-    T* requestFreePlaceFromBlock(Block* block, InsertionDirections direction);
+    std::pair<T*,TBlockSize> requestFreePlace(InsertionDirections direction);
+    std::pair<T*,TBlockSize> requestFreePlaceFromBlock(Block* block, InsertionDirections direction);
     T* requestFreePlaceFromBlock(Block* block);
     Block* allocateBlock();
     Block* insertNewBlock(Block* block, InsertionDirections direction);
