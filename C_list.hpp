@@ -37,6 +37,7 @@ public:
 
         explicit iterator(Block* block, TBlockSize position=1, PositionTypes positionType=PositionTypes::POS_START);
         iterator(Block* block, T* data, TBlockSize position);
+        iterator() = default;
 
         iterator& operator--();
         iterator& operator++();
@@ -46,9 +47,9 @@ public:
         bool operator!=(const iterator& r) const;
 
     private:
-        typename List<T, TBlockSize>::Block* _block;
-        T* _data;
-        TBlockSize _position;
+        typename List<T, TBlockSize>::Block* _block{nullptr};
+        T* _data{nullptr};
+        TBlockSize _position{0};
         friend List;
     };
 

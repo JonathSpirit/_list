@@ -204,14 +204,22 @@ int main()
 #if 0
     gg::List<uint8_t, uint32_t> test;
 
+    gg::List<uint8_t, uint32_t>::iterator it2;
     for (int i=0; i<32; ++i)
     {
-        auto it = test.begin();
+        //auto it = test.begin();
         test.push_front(i);
-        test.insert(it, 99);
+        if (i == 15)
+        {
+            it2 = test.begin();
+        }
+        //test.insert(it, 99);
     }
 
-    test.push_front(42);
+    test.erase(it2);
+    test.push_back(99);
+
+    /*test.push_front(42);
     auto itTest = test.begin();
     test.erase(itTest);
 
@@ -225,7 +233,7 @@ int main()
 
     test.insert(itTest, 113);
 
-    std::cout << "---------------" << std::endl;
+    std::cout << "---------------" << std::endl;*/
 
     for (auto it=test.begin(); it!=test.end(); ++it)
     {
@@ -233,14 +241,14 @@ int main()
         std::cout << a << std::endl;
     }
 
-    std::cout << "......." << std::endl;
+    /*std::cout << "......." << std::endl;
 
     auto itTest2 = test.begin();
     std::cout << (int)*itTest2 << std::endl;
     ++itTest2;
     std::cout << (int)*itTest2 << std::endl;
     --itTest2;
-    std::cout << (int)*itTest2 << std::endl;
+    std::cout << (int)*itTest2 << std::endl;*/
 
 
     return 0;
@@ -310,26 +318,26 @@ int main()
     {
         std::vector<Results> results;
 
-        results.emplace_back();
+        /*results.emplace_back();
         test_insert<std::list<std::string> >(results.back(), 8, 3);
 
         results.emplace_back();
         test_insert<std::vector<std::string> >(results.back(), 8, 3);
 
         results.emplace_back();
-        test_insert<std::deque<std::string> >(results.back(), 8, 3);
+        test_insert<std::deque<std::string> >(results.back(), 8, 3);*/
 
         results.emplace_back();
         test_insert<gg::List<std::string, uint8_t> >(results.back(), 8, 3);
 
-        results.emplace_back();
+        /*results.emplace_back();
         test_insert<gg::List<std::string, uint16_t> >(results.back(), 8, 3);
 
         results.emplace_back();
         test_insert<gg::List<std::string, uint32_t> >(results.back(), 8, 3);
 
         results.emplace_back();
-        test_insert<gg::List<std::string, uint64_t> >(results.back(), 8, 3);
+        test_insert<gg::List<std::string, uint64_t> >(results.back(), 8, 3);*/
 
         writeResults("test_insert.csv", results);
     }

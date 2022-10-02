@@ -281,21 +281,27 @@ std::pair<T*,TBlockSize> List<T, TBlockSize>::requestFreePlaceFromBlock(Block* b
     {//There is some place here
         if (direction == InsertionDirections::FRONT)
         {
-            TBlockSize mask = 0;
-            T* data = reinterpret_cast<T*>(&block->_data);
-            for (TBlockSize i=1; i!=0; i<<=1)
+            int8_t offset = -1;
+            TBlockSize position=1;
+
+            do
             {
-                ///         |         |         |
-                /// 0000'0000 1111'1111 0000'0000
-                mask |= i;
-                if (!(block->_occupiedFlags & i) && (block->_occupiedFlags&~mask) == ~mask)
+                if (block->_occupiedFlags & position)
                 {
+                    if (offset < 0)
+                    {
+                        return {nullptr, 0};
+                    }
+
                     ++this->g_dataSize;
-                    block->_occupiedFlags |= i;
-                    return {data, i};
+                    block->_occupiedFlags |= position>>1;
+                    return {reinterpret_cast<T*>(&block->_data) + offset, position>>1};
                 }
-                ++data;
+
+                ++offset;
+                position <<= 1;
             }
+            while (position != 0);
         }
         else
         {
