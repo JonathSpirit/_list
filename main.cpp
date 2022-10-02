@@ -33,6 +33,8 @@ void test_pushBack_delete(Results& resultPushBack, Results& resultDelete, unsign
         {
             uint64_t iterations = std::pow(10, in)*ilog;
 
+            std::cout << "\titerations: " << iterations << " ";
+
             auto* testContainer = new TContainer{};
 
             auto start = std::chrono::high_resolution_clock::now();
@@ -43,12 +45,16 @@ void test_pushBack_delete(Results& resultPushBack, Results& resultDelete, unsign
             auto stop = std::chrono::high_resolution_clock::now();
             uint64_t tms = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
 
+            std::cout << "time_push_back: " << tms << ' ';
+
             resultPushBack._data.emplace_back(iterations, tms);
 
             start = std::chrono::high_resolution_clock::now();
             delete testContainer;
             stop = std::chrono::high_resolution_clock::now();
             tms = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+
+            std::cout << "time_delete: " << tms << '\n';
 
             resultDelete._data.emplace_back(iterations, tms);
         }
@@ -72,6 +78,8 @@ void test_erase(Results& resultErase, unsigned int n, unsigned int nStart)
         for (unsigned int ilog=1; ilog<10; ++ilog)
         {
             uint64_t iterations = std::pow(10, in)*ilog;
+
+            std::cout << "\titerations: " << iterations << " ";
 
             auto* testContainer = new TContainer{};
 
@@ -98,6 +106,48 @@ void test_erase(Results& resultErase, unsigned int n, unsigned int nStart)
             uint64_t tms = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
 
             resultErase._data.emplace_back(iterations, tms);
+
+            std::cout << "time: " << tms << '\n';
+
+            delete testContainer;
+        }
+    }
+
+    std::cout << "---" << std::endl;
+}
+
+template<class TContainer>
+void test_insert(Results& resultInsert, unsigned int n, unsigned int nStart)
+{
+    std::string name = boost::typeindex::type_id<TContainer>().pretty_name();
+    std::replace( name.begin(), name.end(), ',', ' ');
+
+    std::cout << name << std::endl;
+
+    resultInsert._name = name;
+
+    for (unsigned int in=nStart; in<n; ++in)
+    {
+        for (unsigned int ilog=1; ilog<10; ++ilog)
+        {
+            uint64_t iterations = std::pow(10, in)*ilog;
+
+            std::cout << "\titerations: " << iterations << " ";
+
+            auto* testContainer = new TContainer{};
+
+            auto start = std::chrono::high_resolution_clock::now();
+            for (uint64_t i = 0; i < iterations; ++i)
+            {
+                testContainer->insert(testContainer->begin(), {});
+                testContainer->insert(testContainer->end(), {});
+            }
+            auto stop = std::chrono::high_resolution_clock::now();
+            uint64_t tms = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+
+            resultInsert._data.emplace_back(iterations, tms);
+
+            std::cout << "time: " << tms << '\n';
 
             delete testContainer;
         }
@@ -151,12 +201,14 @@ void writeResults(const std::string& filename, const std::vector<Results>& resul
 
 int main()
 {
-#if 1
+#if 0
     gg::List<uint8_t, uint32_t> test;
 
     for (int i=0; i<32; ++i)
     {
+        auto it = test.begin();
         test.push_front(i);
+        test.insert(it, 99);
     }
 
     test.push_front(42);
@@ -196,7 +248,6 @@ int main()
 
     ///TESTING
 #if 0
-    {
         std::vector<Results> results1;
         std::vector<Results> results2;
 
@@ -225,7 +276,7 @@ int main()
     }
 #endif
 
-#if 1
+#if 0
     {
         std::vector<Results> results;
 
@@ -251,6 +302,36 @@ int main()
         test_erase<gg::List<std::string, uint64_t> >(results.back(), 8, 3);
 
         writeResults("test_erase.csv", results);
+    }
+#endif
+
+#if 1
+    gg::List<std::string, uint8_t> gggg;
+    {
+        std::vector<Results> results;
+
+        results.emplace_back();
+        test_insert<std::list<std::string> >(results.back(), 8, 3);
+
+        results.emplace_back();
+        test_insert<std::vector<std::string> >(results.back(), 8, 3);
+
+        results.emplace_back();
+        test_insert<std::deque<std::string> >(results.back(), 8, 3);
+
+        results.emplace_back();
+        test_insert<gg::List<std::string, uint8_t> >(results.back(), 8, 3);
+
+        results.emplace_back();
+        test_insert<gg::List<std::string, uint16_t> >(results.back(), 8, 3);
+
+        results.emplace_back();
+        test_insert<gg::List<std::string, uint32_t> >(results.back(), 8, 3);
+
+        results.emplace_back();
+        test_insert<gg::List<std::string, uint64_t> >(results.back(), 8, 3);
+
+        writeResults("test_insert.csv", results);
     }
 #endif
 

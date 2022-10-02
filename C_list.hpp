@@ -28,7 +28,14 @@ public:
     class iterator
     {
     public:
-        explicit iterator(Block* block, TBlockSize startPosition=1);
+        enum class PositionTypes : uint8_t
+        {
+            POS_START,
+            POS_END,
+            POS_INPLACE
+        };
+
+        explicit iterator(Block* block, TBlockSize position=1, PositionTypes positionType=PositionTypes::POS_START);
 
         iterator& operator--();
         iterator& operator++();
@@ -54,7 +61,7 @@ public:
     void push(const T& value);
 
     iterator erase(const iterator& pos);
-    iterator insert(const iterator& pos, const T& value);
+    iterator insert(iterator pos, const T& value);
 
     [[nodiscard]] std::size_t getSize() const;
 
@@ -70,11 +77,12 @@ private:
     T* requestFreePlaceFromBlock(Block* block, InsertionDirections direction);
     T* requestFreePlaceFromBlock(Block* block);
     Block* allocateBlock();
+    Block* insertNewBlock(Block* block, InsertionDirections direction);
     void freeBlock(Block* block);
     void freeDataFromBlock(Block* block, TBlockSize position);
 
     Block* g_startBlock{nullptr};
-    Block* g_endBlock{nullptr};
+    Block* g_lastBlock{nullptr};
     std::size_t g_dataSize{0};
 };
 
