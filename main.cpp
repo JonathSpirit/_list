@@ -318,26 +318,26 @@ int main()
     {
         std::vector<Results> results;
 
-        /*results.emplace_back();
+        results.emplace_back();
         test_insert<std::list<std::string> >(results.back(), 8, 3);
 
         results.emplace_back();
         test_insert<std::vector<std::string> >(results.back(), 8, 3);
 
         results.emplace_back();
-        test_insert<std::deque<std::string> >(results.back(), 8, 3);*/
+        test_insert<std::deque<std::string> >(results.back(), 8, 3);
 
         results.emplace_back();
         test_insert<gg::List<std::string, uint8_t> >(results.back(), 8, 3);
 
-        /*results.emplace_back();
+        results.emplace_back();
         test_insert<gg::List<std::string, uint16_t> >(results.back(), 8, 3);
 
         results.emplace_back();
         test_insert<gg::List<std::string, uint32_t> >(results.back(), 8, 3);
 
         results.emplace_back();
-        test_insert<gg::List<std::string, uint64_t> >(results.back(), 8, 3);*/
+        test_insert<gg::List<std::string, uint64_t> >(results.back(), 8, 3);
 
         writeResults("test_insert.csv", results);
     }
