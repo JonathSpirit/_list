@@ -6,6 +6,15 @@ List<T, TBlockSize>::List()
     this->g_lastBlock = this->g_startBlock;
 }
 template<class T, class TBlockSize>
+List<T, TBlockSize>::List(std::size_t size) :
+        List()
+{
+    for (std::size_t i=0; i<size; ++i)
+    {
+        this->push_back(T{});
+    }
+}
+template<class T, class TBlockSize>
 List<T, TBlockSize>::~List()
 {
     auto* block = this->g_startBlock;
@@ -185,9 +194,9 @@ typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(iterator pos,
 }
 
 template<class T, class TBlockSize>
-std::size_t List<T, TBlockSize>::getSize() const
+std::size_t List<T, TBlockSize>::size() const
 {
-    return this->g_blockSize;
+    return this->g_dataSize;
 }
 
 template<class T, class TBlockSize>
@@ -249,6 +258,7 @@ std::pair<T*,TBlockSize> List<T, TBlockSize>::requestFreePlace(InsertionDirectio
 
         if (data.first == nullptr)
         {//Need a new block
+            ++this->g_dataSize;
             auto* newBlock = this->insertNewBlock(this->g_startBlock, InsertionDirections::FRONT);
 
             data.first = reinterpret_cast<T*>(&this->g_startBlock->_data)+(sizeof(TBlockSize)*8-1);
@@ -264,6 +274,7 @@ std::pair<T*,TBlockSize> List<T, TBlockSize>::requestFreePlace(InsertionDirectio
 
         if (data.first == nullptr)
         {//Need a new block
+            ++this->g_dataSize;
             auto* newBlock = this->insertNewBlock(this->g_lastBlock, InsertionDirections::BACK);
 
             data.first = reinterpret_cast<T*>(&this->g_lastBlock->_data);

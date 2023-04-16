@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <limits>
+#include <type_traits>
+#include <utility>
 
 namespace gg
 {
@@ -54,6 +56,7 @@ public:
     };
 
     List();
+    explicit List(std::size_t size);
     ~List();
 
     void clear();
@@ -65,7 +68,7 @@ public:
     iterator erase(const iterator& pos);
     iterator insert(iterator pos, const T& value);
 
-    [[nodiscard]] std::size_t getSize() const;
+    [[nodiscard]] std::size_t size() const;
 
     [[nodiscard]] iterator begin();
     [[nodiscard]] iterator end();
