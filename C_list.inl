@@ -223,17 +223,15 @@ const typename List<T, TBlockSize>::iterator List<T, TBlockSize>::end() const
 template<class T, class TBlockSize>
 T* List<T, TBlockSize>::requestFreePlace()
 {
-    Block* lastBlock{nullptr};
-    auto** block = &this->g_lastBlock;
+    Block* block{this->g_startBlock};
 
-    while (*block != nullptr)
+    while (block->_nextBlock != nullptr)
     {
-        lastBlock = *block;
-        auto* data = this->requestFreePlaceFromBlock(*block);
+        auto* data = this->requestFreePlaceFromBlock(block);
 
         if (data == nullptr)
         {//No more place here
-            block = &(*block)->_nextBlock;
+            block = block->_nextBlock;
         }
         else
         {
@@ -241,13 +239,7 @@ T* List<T, TBlockSize>::requestFreePlace()
         }
     }
 
-    (*block) = this->allocateBlock();
-
-    this->g_lastBlock = *block;
-    this->g_lastBlock->_lastBlock = lastBlock;
-    this->g_end->_lastBlock = *block;
-
-    return reinterpret_cast<T*>(&this->g_lastBlock->_data);
+    return this->requestFreePlace(InsertionDirections::BACK).first;
 }
 template<class T, class TBlockSize>
 std::pair<T*,TBlockSize> List<T, TBlockSize>::requestFreePlace(InsertionDirections direction)
@@ -292,27 +284,24 @@ std::pair<T*,TBlockSize> List<T, TBlockSize>::requestFreePlaceFromBlock(Block* b
     {//There is some place here
         if (direction == InsertionDirections::FRONT)
         {
-            int8_t offset = -1;
-            TBlockSize position=1;
+            if (block->_occupiedFlags & 1)
+            {
+                return {nullptr, 0};
+            }
 
-            do
+            T* lastData = reinterpret_cast<T*>(&block->_data);
+
+            for (TBlockSize position=2; position != 0; position <<= 1)
             {
                 if (block->_occupiedFlags & position)
                 {
-                    if (offset < 0)
-                    {
-                        return {nullptr, 0};
-                    }
-
+                    position >>= 1;
                     ++this->g_dataSize;
-                    block->_occupiedFlags |= position>>1;
-                    return {reinterpret_cast<T*>(&block->_data) + offset, position>>1};
+                    block->_occupiedFlags |= position;
+                    return {lastData, position};
                 }
-
-                ++offset;
-                position <<= 1;
+                ++lastData;
             }
-            while (position != 0);
         }
         else
         {
@@ -401,6 +390,7 @@ void List<T, TBlockSize>::freeBlock(Block* block)
         if (block->_occupiedFlags & i)
         {
             data->~T();
+            --this->g_dataSize;
         }
         ++data;
     }

@@ -12,7 +12,7 @@ namespace gg
 template<class T, class TBlockSize>
 class List
 {
-    static_assert(std::is_fundamental<TBlockSize>::value, "TBlockSize must be a fundamental type !");
+    static_assert(std::is_fundamental_v<TBlockSize> && std::is_unsigned_v<TBlockSize>, "TBlockSize must be fundamental and unsigned type !");
 public:
     struct Block
     {
@@ -81,7 +81,7 @@ private:
     std::pair<T*,TBlockSize> requestFreePlace(InsertionDirections direction);
     std::pair<T*,TBlockSize> requestFreePlaceFromBlock(Block* block, InsertionDirections direction);
     T* requestFreePlaceFromBlock(Block* block);
-    Block* allocateBlock();
+    inline Block* allocateBlock();
     Block* insertNewBlock(Block* block, InsertionDirections direction);
     void freeBlock(Block* block);
     void freeDataFromBlock(Block* block, TBlockSize position);

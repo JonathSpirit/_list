@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cassert>
 #include <iostream>
+#include <array>
 
 
 struct Results
@@ -272,6 +273,17 @@ void writeResults(const std::string& filename, const std::vector<Results>& resul
 
 int main()
 {
+    gg::List<int8_t, uint8_t> testList;
+
+    testList.push_back(1);
+    testList.push_back(2);
+    testList.push_front(-1);
+    testList.push_front(-2);
+    testList.push(4);
+    testList.push(5);
+
+    return 0;
+
 #ifdef NDEBUG
     std::string mode = "release_";
 #else
