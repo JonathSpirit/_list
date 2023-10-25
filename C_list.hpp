@@ -1,10 +1,11 @@
 #ifndef C_LIST_HPP_INCLUDED_
 #define C_LIST_HPP_INCLUDED_
 
+#include <cstdlib>
 #include <cstdint>
 #include <limits>
-#include <type_traits>
 #include <utility>
+#include <type_traits>
 
 namespace gg
 {
@@ -17,11 +18,11 @@ public:
     struct Block
     {
         Block* _lastBlock{nullptr};
-        uint8_t _data[sizeof(T)*sizeof(TBlockSize)*8]{0};
+        uint8_t _data[sizeof(T)*sizeof(TBlockSize)*8]{};
         Block* _nextBlock{nullptr};
         TBlockSize _occupiedFlags{0};
     };
-    enum class InsertionDirections : uint8_t
+    enum class Positions
     {
         FRONT,
         BACK
@@ -63,7 +64,6 @@ public:
 
     void push_back(const T& value);
     void push_front(const T& value);
-    void push(const T& value);
 
     iterator erase(const iterator& pos);
     iterator insert(iterator pos, const T& value);
@@ -77,12 +77,18 @@ public:
     [[nodiscard]] const iterator end() const;
 
 private:
+    struct DataPlace
+    {
+        T* _data{nullptr};
+        TBlockSize _position{0};
+    };
+
     T* requestFreePlace();
-    std::pair<T*,TBlockSize> requestFreePlace(InsertionDirections direction);
-    std::pair<T*,TBlockSize> requestFreePlaceFromBlock(Block* block, InsertionDirections direction);
+    DataPlace requestFreePlace(Positions direction);
+    DataPlace requestFreePlaceFromBlock(Block* block, Positions direction);
     T* requestFreePlaceFromBlock(Block* block);
     inline Block* allocateBlock();
-    Block* insertNewBlock(Block* block, InsertionDirections direction);
+    Block* insertNewBlock(Block* block, Positions direction);
     void freeBlock(Block* block);
     void freeDataFromBlock(Block* block, TBlockSize position);
 

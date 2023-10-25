@@ -206,16 +206,50 @@ void test_insert(char const* const containerName, Results& result, uint32_t nLog
             std::cout << "\titerations: " << iterations << " ";
 
             TContainer testContainer{iterations};
+
+            auto itMiddle = testContainer.begin();
+            for (std::size_t a=0; a<testContainer.size()/2; ++a)
+            {
+                ++itMiddle;
+            }
+
             auto start = std::chrono::high_resolution_clock::now();
             for (uint32_t i = 0; i < iterations; ++i)
             {
-                auto itMiddle = testContainer.begin();
-                for (std::size_t a=0; a<testContainer.size()/2; ++a)
-                {
-                    ++itMiddle;
-                }
                 testContainer.insert(itMiddle, {});
             }
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+
+            std::cout << "time: " << time << '\n';
+
+            result._data.emplace_back(iterations, time);
+        }
+    }
+
+    std::cout << "---" << std::endl;
+}
+template<class TContainer>
+void test_iterations(char const* const containerName, Results& result, uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
+{
+    std::cout << "test: iterations, on " << containerName << std::endl;
+
+    result._name = containerName;
+
+    for (uint32_t iLogStep=nLogStart; iLogStep<nLogStop; ++iLogStep)
+    {
+        uint32_t logStep = static_cast<uint32_t>(std::pow(10, iLogStep+1))/nLogCount;
+
+        for (uint32_t iLog=static_cast<uint32_t>(iLogStep!=nLogStart); iLog<nLogCount; ++iLog)
+        {
+            uint32_t iterations = static_cast<uint32_t>(std::pow(10, iLogStep)) + iLog * logStep;
+
+            std::cout << "\titerations: " << iterations << " ";
+
+            TContainer testContainer{iterations};
+
+            auto start = std::chrono::high_resolution_clock::now();
+            for (auto it=testContainer.begin(); it!=testContainer.end(); ++it) {}
             auto stop = std::chrono::high_resolution_clock::now();
             auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
 
@@ -273,7 +307,7 @@ void writeResults(const std::string& filename, const std::vector<Results>& resul
 
 int main()
 {
-    gg::List<int8_t, uint8_t> testList;
+    /*gg::List<int8_t, uint8_t> testList;
 
     testList.push_back(1);
     testList.push_back(2);
@@ -282,7 +316,7 @@ int main()
     testList.push(4);
     testList.push(5);
 
-    return 0;
+    return 0;*/
 
 #ifdef NDEBUG
     std::string mode = "release_";
@@ -418,6 +452,32 @@ int main()
 #endif
 
 #if 1
+    {
+        std::vector<Results> results;
+
+        results.emplace_back();
+        test_iterations<std::list<std::string> >("std::list<std::string>", results.back(), 2, 8, 10);
+
+        results.emplace_back();
+        test_iterations<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 8, 10);
+
+        results.emplace_back();
+        test_iterations<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 8, 10);
+
+        results.emplace_back();
+        test_iterations<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 6, 10);
+        results.emplace_back();
+        test_iterations<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 6, 10);
+        results.emplace_back();
+        test_iterations<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 6, 10);
+        results.emplace_back();
+        test_iterations<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 6, 10);
+
+        writeResults(mode+"test_iterations.csv", results);
+    }
+#endif
+
+#if 0
     {
         std::vector<Results> results;
 
