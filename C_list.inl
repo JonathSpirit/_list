@@ -50,6 +50,9 @@ constexpr void List<T, TBlockSize>::clear()
     this->g_startBlock = this->allocateBlock();
     this->g_lastBlock = this->g_startBlock;
     this->g_end->_lastBlock = this->g_lastBlock;
+
+    this->g_cacheBackIndex = gIndexMid;
+    this->g_cacheFrontIndex = gIndexMid-1;
 }
 
 template<class T, class TBlockSize>
@@ -64,6 +67,17 @@ constexpr void List<T, TBlockSize>::push_back(U&& value)
     new (data) T(std::forward<U>(value));
 }
 template<class T, class TBlockSize>
+template<class... TArgs>
+constexpr T& List<T, TBlockSize>::emplace_back(TArgs&&... value)
+{
+    auto* data = this->requestFreePlace(Positions::BACK)._data;
+    if (data == nullptr)
+    {
+        std::abort();
+    }
+    new (data) T(std::forward<TArgs...>(value...));
+}
+template<class T, class TBlockSize>
 template<class U>
 constexpr void List<T, TBlockSize>::push_front(U&& value)
 {
@@ -73,6 +87,28 @@ constexpr void List<T, TBlockSize>::push_front(U&& value)
         std::abort();
     }
     new (data) T(std::forward<U>(value));
+}
+template<class T, class TBlockSize>
+template<class... TArgs>
+constexpr T& List<T, TBlockSize>::emplace_front(TArgs&&... value)
+{
+    auto* data = this->requestFreePlace(Positions::FRONT)._data;
+    if (data == nullptr)
+    {
+        std::abort();
+    }
+    new (data) T(std::forward<TArgs...>(value...));
+}
+
+template<class T, class TBlockSize>
+constexpr void List<T, TBlockSize>::pop_back()
+{
+    this->erase(--this->end());
+}
+template<class T, class TBlockSize>
+constexpr void List<T, TBlockSize>::pop_front()
+{
+    this->erase(this->begin());
 }
 
 template<class T, class TBlockSize>
@@ -94,6 +130,8 @@ constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(cons
 
         if (nextBlock == nullptr && lastBlock == nullptr)
         {//We can't free the last block
+            this->g_cacheBackIndex = gIndexMid;
+            this->g_cacheFrontIndex = gIndexMid-1;
             return iteratorNext;
         }
 
@@ -102,17 +140,69 @@ constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(cons
             nextBlock->_lastBlock = lastBlock;
             lastBlock->_nextBlock = nextBlock;
         }
-        else if (nextBlock != nullptr)
+        else if (lastBlock == nullptr)
         {
             nextBlock->_lastBlock = nullptr;
             this->g_startBlock = nextBlock;
+
+            //Redo the front cache index
+            this->g_cacheFrontIndex = 0;
+            while (this->g_cacheFrontIndex != gIndexLast)
+            {
+                if (nextBlock->_occupiedFlags & (static_cast<TBlockSize>(1)<<this->g_cacheFrontIndex))
+                {
+                    --this->g_cacheFrontIndex;
+                    break;
+                }
+                ++this->g_cacheFrontIndex;
+            }
         }
-        else if (lastBlock != nullptr)
+        else if (nextBlock == nullptr)
         {
             lastBlock->_nextBlock = nullptr;
             this->g_lastBlock = lastBlock;
+
+            //Redo the back cache index
+            this->g_cacheBackIndex = gIndexLast;
+            while (this->g_cacheBackIndex != 0)
+            {
+                if (lastBlock->_occupiedFlags & (static_cast<TBlockSize>(1)<<this->g_cacheBackIndex))
+                {
+                    ++this->g_cacheBackIndex;
+                    break;
+                }
+                --this->g_cacheBackIndex;
+            }
         }
         delete pos._block;
+    }
+    else
+    {
+        //Redo the cache indexes
+        if (pos._block->_nextBlock == nullptr && (pos._dataLocation._position != static_cast<TBlockSize>(1)<<this->g_cacheBackIndex))
+        {
+            while (this->g_cacheBackIndex != 0)
+            {
+                if (pos._block->_occupiedFlags & (static_cast<TBlockSize>(1)<<this->g_cacheBackIndex))
+                {
+                    ++this->g_cacheBackIndex;
+                    break;
+                }
+                --this->g_cacheBackIndex;
+            }
+        }
+        else if (pos._block->_lastBlock == nullptr && (pos._dataLocation._position != static_cast<TBlockSize>(1)<<this->g_cacheFrontIndex))
+        {
+            while (this->g_cacheFrontIndex != gIndexLast)
+            {
+                if (pos._block->_occupiedFlags & (static_cast<TBlockSize>(1)<<this->g_cacheFrontIndex))
+                {
+                    --this->g_cacheFrontIndex;
+                    break;
+                }
+                ++this->g_cacheFrontIndex;
+            }
+        }
     }
 
     return iteratorNext;
@@ -257,9 +347,14 @@ constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(con
 }
 
 template<class T, class TBlockSize>
-constexpr std::size_t List<T, TBlockSize>::size() const
+constexpr std::size_t List<T, TBlockSize>::size() const noexcept
 {
     return this->g_dataSize;
+}
+template<class T, class TBlockSize>
+constexpr bool List<T, TBlockSize>::empty() const noexcept
+{
+    return this->g_dataSize == 0;
 }
 
 template<class T, class TBlockSize>
@@ -317,6 +412,27 @@ template<class T, class TBlockSize>
 constexpr typename List<T, TBlockSize>::const_iterator List<T, TBlockSize>::cend() const
 {
     return this->end();
+}
+
+template<class T, class TBlockSize>
+constexpr T& List<T, TBlockSize>::front()
+{
+    return *this->begin();
+}
+template<class T, class TBlockSize>
+constexpr T const& List<T, TBlockSize>::front() const
+{
+    return *this->begin();
+}
+template<class T, class TBlockSize>
+constexpr T& List<T, TBlockSize>::back()
+{
+    return *--this->end();
+}
+template<class T, class TBlockSize>
+constexpr T const& List<T, TBlockSize>::back() const
+{
+    return *--this->end();
 }
 
 template<class T, class TBlockSize>

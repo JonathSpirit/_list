@@ -357,7 +357,7 @@ int main()
     std::string mode = "debug_";
 #endif
 
-#if 0
+#if 1
     {
         std::vector<Results> results;
 
@@ -383,7 +383,7 @@ int main()
     }
 #endif
 
-#if 0
+#if 1
     {
         std::vector<Results> results;
 
@@ -409,7 +409,7 @@ int main()
     }
 #endif
 
-#if 0
+#if 1
     {
         std::vector<Results> results;
 
@@ -435,7 +435,7 @@ int main()
     }
 #endif
 
-#if 0
+#if 1
     {
         std::vector<Results> results;
 
@@ -510,7 +510,7 @@ int main()
     }
 #endif
 
-#if 1
+#if 0
     {
         std::vector<Results> results;
 

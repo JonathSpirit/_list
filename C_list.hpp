@@ -104,14 +104,22 @@ public:
 
     template<class U>
     constexpr void push_back(U&& value);
+    template<class... TArgs>
+    constexpr T& emplace_back(TArgs&&... value);
     template<class U>
     constexpr void push_front(U&& value);
+    template<class... TArgs>
+    constexpr T& emplace_front(TArgs&&... value);
+
+    constexpr void pop_back();
+    constexpr void pop_front();
 
     constexpr iterator erase(const_iterator const& pos);
     template<class U>
     constexpr iterator insert(const_iterator pos, U&& value);
 
-    [[nodiscard]] constexpr std::size_t size() const;
+    [[nodiscard]] constexpr std::size_t size() const noexcept;
+    [[nodiscard]] constexpr bool empty() const noexcept;
 
     [[nodiscard]] constexpr iterator begin();
     [[nodiscard]] constexpr iterator end();
@@ -120,6 +128,12 @@ public:
     [[nodiscard]] constexpr const_iterator cbegin() const;
     [[nodiscard]] constexpr const_iterator end() const;
     [[nodiscard]] constexpr const_iterator cend() const;
+
+    [[nodiscard]] constexpr T& front();
+    [[nodiscard]] constexpr T const& front() const;
+    [[nodiscard]] constexpr T& back();
+    [[nodiscard]] constexpr T const& back() const;
+
 
 private:
     constexpr DataLocation requestFreePlace(Positions direction);
