@@ -2,7 +2,7 @@ namespace gg
 {
 
 template<class T, class TBlockSize>
-List<T, TBlockSize>::List() :
+constexpr List<T, TBlockSize>::List() :
         g_startBlock{nullptr},
         g_lastBlock{nullptr},
         g_dataSize{0},
@@ -14,7 +14,7 @@ List<T, TBlockSize>::List() :
     this->g_lastBlock = this->g_startBlock;
 }
 template<class T, class TBlockSize>
-List<T, TBlockSize>::List(std::size_t size) :
+constexpr List<T, TBlockSize>::List(std::size_t size) :
         List()
 {
     for (std::size_t i=0; i<size; ++i)
@@ -36,7 +36,7 @@ List<T, TBlockSize>::~List()
 }
 
 template<class T, class TBlockSize>
-void List<T, TBlockSize>::clear()
+constexpr void List<T, TBlockSize>::clear()
 {
     auto* block = this->g_startBlock;
 
@@ -54,7 +54,7 @@ void List<T, TBlockSize>::clear()
 
 template<class T, class TBlockSize>
 template<class U>
-void List<T, TBlockSize>::push_back(U&& value)
+constexpr void List<T, TBlockSize>::push_back(U&& value)
 {
     auto* data = this->requestFreePlace(Positions::BACK)._data;
     if (data == nullptr)
@@ -65,7 +65,7 @@ void List<T, TBlockSize>::push_back(U&& value)
 }
 template<class T, class TBlockSize>
 template<class U>
-void List<T, TBlockSize>::push_front(U&& value)
+constexpr void List<T, TBlockSize>::push_front(U&& value)
 {
     auto* data = this->requestFreePlace(Positions::FRONT)._data;
     if (data == nullptr)
@@ -76,7 +76,7 @@ void List<T, TBlockSize>::push_front(U&& value)
 }
 
 template<class T, class TBlockSize>
-typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(const_iterator const& pos)
+constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(const_iterator const& pos)
 {
     //Prepare the next iterator
     iterator iteratorNext = pos;
@@ -119,7 +119,7 @@ typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(const_iterator
 }
 template<class T, class TBlockSize>
 template<class U>
-typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(const_iterator pos, U&& value)
+constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(const_iterator pos, U&& value)
 {
     if (pos._dataLocation._position == 0)
     {//position is the end so we cab just push back
@@ -257,7 +257,7 @@ typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(const_iterato
 }
 
 template<class T, class TBlockSize>
-std::size_t List<T, TBlockSize>::size() const
+constexpr std::size_t List<T, TBlockSize>::size() const
 {
     return this->g_dataSize;
 }

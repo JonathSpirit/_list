@@ -96,22 +96,22 @@ public:
         friend List;
     };
 
-    List();
-    explicit List(std::size_t size);
+    constexpr List();
+    constexpr explicit List(std::size_t size);
     ~List();
 
-    void clear();
+    constexpr void clear();
 
     template<class U>
-    void push_back(U&& value);
+    constexpr void push_back(U&& value);
     template<class U>
-    void push_front(U&& value);
+    constexpr void push_front(U&& value);
 
-    iterator erase(const_iterator const& pos);
+    constexpr iterator erase(const_iterator const& pos);
     template<class U>
-    iterator insert(const_iterator pos, U&& value);
+    constexpr iterator insert(const_iterator pos, U&& value);
 
-    [[nodiscard]] std::size_t size() const;
+    [[nodiscard]] constexpr std::size_t size() const;
 
     [[nodiscard]] constexpr iterator begin();
     [[nodiscard]] constexpr iterator end();
