@@ -14,7 +14,18 @@ template<class T, class TBlockSize>
 class List
 {
     static_assert(std::is_fundamental_v<TBlockSize> && std::is_unsigned_v<TBlockSize>, "TBlockSize must be fundamental and unsigned type !");
-public:
+
+    enum class Positions
+    {
+        FRONT,
+        BACK
+    };
+
+    struct DataLocation
+    {
+        T* _data{nullptr};
+        TBlockSize _position{0};
+    };
     struct Block
     {
         Block* _lastBlock{nullptr};
@@ -22,37 +33,66 @@ public:
         Block* _nextBlock{nullptr};
         TBlockSize _occupiedFlags{0};
     };
-    enum class Positions
-    {
-        FRONT,
-        BACK
-    };
 
-    class iterator
+    constexpr static unsigned short gIndexLast = sizeof(TBlockSize) * 8 - 1;
+    constexpr static unsigned short gIndexMid = sizeof(TBlockSize) * 8 / 2;
+    constexpr static TBlockSize gPositionFirst = 1;
+    constexpr static TBlockSize gPositionLast = static_cast<TBlockSize>(1) << gIndexLast;
+    constexpr static TBlockSize gPositionMid = static_cast<TBlockSize>(1) << gIndexMid;
+
+    class base_iterator
     {
     public:
-        enum class PositionTypes : uint8_t
-        {
-            POS_START,
-            POS_END,
-            POS_INPLACE
-        };
+        constexpr explicit base_iterator(Block* block, DataLocation const& dataLocation);
+        constexpr explicit base_iterator(Block* block);
+        constexpr base_iterator() = default;
 
-        explicit iterator(Block* block, TBlockSize position=1, PositionTypes positionType=PositionTypes::POS_START);
-        iterator(Block* block, T* data, TBlockSize position);
-        iterator() = default;
+        constexpr void operator--();
+        constexpr void operator++();
 
-        iterator& operator--();
-        iterator& operator++();
-        T& operator*();
-
-        bool operator==(const iterator& r) const;
-        bool operator!=(const iterator& r) const;
+        [[nodiscard]] constexpr bool operator==(const base_iterator& r) const;
+        [[nodiscard]] constexpr bool operator!=(const base_iterator& r) const;
 
     private:
-        typename List<T, TBlockSize>::Block* _block{nullptr};
-        T* _data{nullptr};
-        TBlockSize _position{0};
+        Block* _block{nullptr};
+        DataLocation _dataLocation;
+        friend List;
+    };
+
+public:
+
+    using value_type = T;
+
+    class const_iterator;
+
+    class iterator : public base_iterator
+    {
+    public:
+        using base_iterator::base_iterator;
+
+        constexpr iterator& operator--() {base_iterator::operator--(); return *this;}
+        constexpr iterator& operator++() {base_iterator::operator++(); return *this;}
+
+        [[nodiscard]] constexpr T& operator*() const;
+
+    private:
+        constexpr iterator(const_iterator const& it) : base_iterator(it) {}
+        friend List;
+    };
+
+    class const_iterator : public base_iterator
+    {
+    public:
+        using base_iterator::base_iterator;
+
+        constexpr const_iterator(iterator const& it) : base_iterator(it) {}
+
+        constexpr const_iterator& operator--() {base_iterator::operator--(); return *this;}
+        constexpr const_iterator& operator++() {base_iterator::operator++(); return *this;}
+
+        [[nodiscard]] constexpr T const& operator*() const;
+
+    private:
         friend List;
     };
 
@@ -62,43 +102,44 @@ public:
 
     void clear();
 
-    void push_back(const T& value);
-    void push_front(const T& value);
+    template<class U>
+    void push_back(U&& value);
+    template<class U>
+    void push_front(U&& value);
 
-    iterator erase(const iterator& pos);
-    iterator insert(iterator pos, const T& value);
+    iterator erase(const_iterator const& pos);
+    template<class U>
+    iterator insert(const_iterator pos, U&& value);
 
     [[nodiscard]] std::size_t size() const;
 
-    [[nodiscard]] iterator begin();
-    [[nodiscard]] iterator end();
+    [[nodiscard]] constexpr iterator begin();
+    [[nodiscard]] constexpr iterator end();
 
-    [[nodiscard]] const iterator begin() const;
-    [[nodiscard]] const iterator end() const;
+    [[nodiscard]] constexpr const_iterator begin() const;
+    [[nodiscard]] constexpr const_iterator cbegin() const;
+    [[nodiscard]] constexpr const_iterator end() const;
+    [[nodiscard]] constexpr const_iterator cend() const;
 
 private:
-    struct DataPlace
-    {
-        T* _data{nullptr};
-        TBlockSize _position{0};
-    };
+    constexpr DataLocation requestFreePlace(Positions direction);
+    constexpr void allocateBlock(Positions direction);
+    constexpr static Block* allocateBlock();
+    constexpr Block* insertNewBlock(Block* block, Positions direction);
+    constexpr static void shiftBlockToFreeUpLastPosition(Block* block);
 
-    T* requestFreePlace();
-    DataPlace requestFreePlace(Positions direction);
-    DataPlace requestFreePlaceFromBlock(Block* block, Positions direction);
-    T* requestFreePlaceFromBlock(Block* block);
-    inline Block* allocateBlock();
-    Block* insertNewBlock(Block* block, Positions direction);
-    void freeBlock(Block* block);
-    void freeDataFromBlock(Block* block, TBlockSize position);
+    constexpr void freeBlock(Block* block);
 
-    Block* g_startBlock{nullptr};
-    Block* g_lastBlock{nullptr};
-    std::size_t g_dataSize{0};
+    Block* g_startBlock;
+    Block* g_lastBlock;
+    std::size_t g_dataSize;
+
+    unsigned short g_cacheFrontIndex;
+    unsigned short g_cacheBackIndex;
 };
 
-#include "C_list.inl"
-
 }//end gg
+
+#include "C_list.inl"
 
 #endif //C_LIST_HPP_INCLUDED_

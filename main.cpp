@@ -11,6 +11,7 @@
 #include <iostream>
 #include <array>
 
+#if 1
 
 struct Results
 {
@@ -40,7 +41,7 @@ void test_pushFront(char const* const containerName, Results& result, uint32_t n
             auto start = std::chrono::high_resolution_clock::now();
             for (uint32_t i = 0; i < iterations; ++i)
             {
-                testContainer.push_front({});
+                testContainer.push_front(typename TContainer::value_type{});
             }
             auto stop = std::chrono::high_resolution_clock::now();
             auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
@@ -75,7 +76,7 @@ void test_pushBack(char const* const containerName, Results& result, uint32_t nL
             auto start = std::chrono::high_resolution_clock::now();
             for (uint32_t i = 0; i < iterations; ++i)
             {
-                testContainer.push_back({});
+                testContainer.push_back(typename TContainer::value_type{});
             }
             auto stop = std::chrono::high_resolution_clock::now();
             auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
@@ -216,7 +217,7 @@ void test_insert(char const* const containerName, Results& result, uint32_t nLog
             auto start = std::chrono::high_resolution_clock::now();
             for (uint32_t i = 0; i < iterations; ++i)
             {
-                testContainer.insert(itMiddle, {});
+                testContainer.insert(itMiddle, typename TContainer::value_type{});
             }
             auto stop = std::chrono::high_resolution_clock::now();
             auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
@@ -304,17 +305,49 @@ void writeResults(const std::string& filename, const std::vector<Results>& resul
 
     csv.close();
 }
+#endif
 
 int main()
 {
     /*gg::List<int8_t, uint8_t> testList;
 
+    std::cout << "size: " << sizeof(testList) << std::endl;
+    std::cout << "std::list size: " << sizeof(std::list<int8_t>) << std::endl;
+
     testList.push_back(1);
     testList.push_back(2);
     testList.push_front(-1);
     testList.push_front(-2);
-    testList.push(4);
-    testList.push(5);
+    testList.push_front(-3);
+    testList.push_front(-4);
+    //testList.push_front(-5);
+
+    //testList.insert(++testList.begin(), 9);
+    testList.insert(testList.begin(), 9);
+    testList.insert(testList.begin(), 99);
+
+    auto itInsert = testList.begin();
+    testList.insert(itInsert, 15);
+    testList.insert(itInsert, 30);
+
+    for (auto it=testList.cbegin(); it!=testList.cend(); ++it)
+    {
+        if (*it == -2)
+        {
+            testList.erase(testList.erase(it));
+            break;
+        }
+    }
+
+    for (auto it=testList.cbegin(); it!=testList.cend(); ++it)
+    {
+        std::cout << static_cast<int32_t>(*it) << std::endl;
+    }
+
+    std::cout << "begin: " << static_cast<int32_t>(*testList.begin()) << std::endl;
+    std::cout << "end-1: " << static_cast<int32_t>(*--testList.end()) << std::endl;
+    std::cout << "end-2: " << static_cast<int32_t>(*----testList.end()) << std::endl;
+    std::cout << "final size: " << testList.size() << std::endl;
 
     return 0;*/
 
@@ -451,7 +484,7 @@ int main()
     }
 #endif
 
-#if 1
+#if 0
     {
         std::vector<Results> results;
 
@@ -477,38 +510,36 @@ int main()
     }
 #endif
 
-#if 0
+#if 1
     {
         std::vector<Results> results;
 
         results.emplace_back();
-        test_insert<std::list<std::string> >("std::list<std::string>", results.back(), 2, 5, 10);
+        test_insert<std::list<std::string> >("std::list<std::string>", results.back(), 2, 7, 10);
         results.emplace_back();
-        test_insert<std::list<uint32_t> >("std::list<uint32_t>", results.back(), 2, 5, 10);
+        test_insert<std::list<uint32_t> >("std::list<uint32_t>", results.back(), 2, 7, 10);
+
+        //results.emplace_back();
+        //test_insert<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 5, 10);
+        //results.emplace_back();
+        //test_insert<std::vector<uint32_t> >("std::vector<uint32_t>", results.back(), 2, 5, 10);
+
+        //results.emplace_back();
+        //test_insert<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 5, 10);
+        //results.emplace_back();
+        //test_insert<std::deque<uint32_t> >("std::deque<uint32_t>", results.back(), 2, 5, 10);
 
         results.emplace_back();
-        test_insert<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 5, 10);
-        results.emplace_back();
-        test_insert<std::vector<uint32_t> >("std::vector<uint32_t>", results.back(), 2, 5, 10);
+        test_insert<gg::List<uint32_t, uint32_t> >("gg::List<uint32_t uint16_t>", results.back(), 2, 7, 10);
 
         results.emplace_back();
-        test_insert<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 5, 10);
+        test_insert<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 7, 10);
         results.emplace_back();
-        test_insert<std::deque<uint32_t> >("std::deque<uint32_t>", results.back(), 2, 5, 10);
-
+        test_insert<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 7, 10);
         results.emplace_back();
-        test_insert<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 5, 10);
+        test_insert<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 7, 10);
         results.emplace_back();
-        test_insert<gg::List<uint32_t, uint16_t> >("gg::List<uint32_t uint16_t>", results.back(), 2, 5, 10);
-
-        /*results.emplace_back();
-        test_insert<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 5, 10);
-        results.emplace_back();
-        test_insert<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 5, 10);
-        results.emplace_back();
-        test_insert<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 5, 10);
-        results.emplace_back();
-        test_insert<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 5, 10);*/
+        test_insert<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 7, 10);
 
         writeResults(mode+"test_insert.csv", results);
     }
