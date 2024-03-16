@@ -634,15 +634,25 @@ constexpr bool List<T, TBlockSize>::base_iterator::operator!=(const base_iterato
 //iterator
 
 template<class T, class TBlockSize>
-constexpr T& List<T, TBlockSize>::iterator::operator*() const
+constexpr typename List<T, TBlockSize>::base_iterator::reference List<T, TBlockSize>::iterator::operator*() const
 {
     return *this->_dataLocation._data;
+}
+template<class T, class TBlockSize>
+constexpr typename List<T, TBlockSize>::base_iterator::pointer List<T, TBlockSize>::iterator::operator->() const
+{
+    return this->_dataLocation._data;
 }
 
 //const_iterator
 
 template<class T, class TBlockSize>
-constexpr T const& List<T, TBlockSize>::const_iterator::operator*() const
+constexpr typename List<T, TBlockSize>::base_iterator::const_reference List<T, TBlockSize>::const_iterator::operator*() const
 {
     return *this->_dataLocation._data;
+}
+template<class T, class TBlockSize>
+constexpr typename List<T, TBlockSize>::base_iterator::const_pointer List<T, TBlockSize>::const_iterator::operator->() const
+{
+    return this->_dataLocation._data;
 }

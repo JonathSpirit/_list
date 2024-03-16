@@ -5,6 +5,7 @@
 #include <limits>
 #include <utility>
 #include <type_traits>
+#include <iterator>
 
 namespace gg
 {
@@ -42,6 +43,14 @@ class List
     class base_iterator
     {
     public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using difference_type   = std::ptrdiff_t;
+        using value_type        = T;
+        using pointer           = value_type*;
+        using const_pointer     = value_type const*;
+        using reference         = value_type&;
+        using const_reference   = value_type const&;
+
         constexpr explicit base_iterator(Block* block, DataLocation const& dataLocation);
         constexpr explicit base_iterator(Block* block);
         constexpr base_iterator() = default;
@@ -59,7 +68,6 @@ class List
     };
 
 public:
-
     using value_type = T;
 
     class const_iterator;
@@ -72,7 +80,8 @@ public:
         constexpr iterator& operator--() {base_iterator::operator--(); return *this;}
         constexpr iterator& operator++() {base_iterator::operator++(); return *this;}
 
-        [[nodiscard]] constexpr T& operator*() const;
+        [[nodiscard]] constexpr typename base_iterator::reference operator*() const;
+        [[nodiscard]] constexpr typename base_iterator::pointer operator->() const;
 
     private:
         constexpr iterator(const_iterator const& it) : base_iterator(it) {}
@@ -89,7 +98,8 @@ public:
         constexpr const_iterator& operator--() {base_iterator::operator--(); return *this;}
         constexpr const_iterator& operator++() {base_iterator::operator++(); return *this;}
 
-        [[nodiscard]] constexpr T const& operator*() const;
+        [[nodiscard]] constexpr typename base_iterator::const_reference operator*() const;
+        [[nodiscard]] constexpr typename base_iterator::const_pointer operator->() const;
 
     private:
         friend List;

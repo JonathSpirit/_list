@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "C_list.hpp"
 #include <list>
 #include <vector>
@@ -309,7 +311,7 @@ void writeResults(const std::string& filename, const std::vector<Results>& resul
 
 int main()
 {
-    /*gg::List<int8_t, uint8_t> testList;
+    gg::List<int8_t, uint8_t> testList;
 
     std::cout << "size: " << sizeof(testList) << std::endl;
     std::cout << "std::list size: " << sizeof(std::list<int8_t>) << std::endl;
@@ -340,6 +342,8 @@ int main()
         }
     }
 
+    //std::reverse(testList.begin(), testList.end());
+
     for (auto it=testList.cbegin(); it!=testList.cend(); ++it)
     {
         std::cout << static_cast<int32_t>(*it) << std::endl;
@@ -350,7 +354,7 @@ int main()
     std::cout << "end-2: " << static_cast<int32_t>(*----testList.end()) << std::endl;
     std::cout << "final size: " << testList.size() << std::endl;
 
-    return 0;*/
+    return 0;
 
 #ifdef NDEBUG
     std::string mode = "release_";
