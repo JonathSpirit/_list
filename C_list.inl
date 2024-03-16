@@ -1,6 +1,3 @@
-namespace gg
-{
-
 template<class T, class TBlockSize>
 constexpr List<T, TBlockSize>::List() :
         g_startBlock{nullptr},
@@ -649,5 +646,3 @@ constexpr T const& List<T, TBlockSize>::const_iterator::operator*() const
 {
     return *this->_dataLocation._data;
 }
-
-} //namespace gg

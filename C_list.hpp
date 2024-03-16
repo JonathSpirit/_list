@@ -1,5 +1,4 @@
-#ifndef C_LIST_HPP_INCLUDED_
-#define C_LIST_HPP_INCLUDED_
+#pragma once
 
 #include <cstdlib>
 #include <cstdint>
@@ -154,8 +153,6 @@ private:
     unsigned short g_cacheBackIndex;
 };
 
-}//end gg
-
 #include "C_list.inl"
 
-#endif //C_LIST_HPP_INCLUDED_
+}//end gg
