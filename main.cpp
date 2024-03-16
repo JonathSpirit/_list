@@ -329,6 +329,7 @@ int main()
     auto itInsert = testList.begin();
     testList.insert(itInsert, 15);
     testList.insert(itInsert, 30);
+    testList.insert(--testList.end(), 77);
 
     for (auto it=testList.cbegin(); it!=testList.cend(); ++it)
     {
@@ -458,7 +459,7 @@ int main()
     }
 #endif
 
-#if 0
+#if 1
     {
         std::vector<Results> results;
 
@@ -484,7 +485,7 @@ int main()
     }
 #endif
 
-#if 0
+#if 1
     {
         std::vector<Results> results;
 
@@ -510,7 +511,7 @@ int main()
     }
 #endif
 
-#if 0
+#if 1
     {
         std::vector<Results> results;
 

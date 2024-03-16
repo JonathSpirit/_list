@@ -59,44 +59,28 @@ template<class T, class TBlockSize>
 template<class U>
 constexpr void List<T, TBlockSize>::push_back(U&& value)
 {
-    auto* data = this->requestFreePlace(Positions::BACK)._data;
-    if (data == nullptr)
-    {
-        std::abort();
-    }
+    auto* data = this->requestFreePlace<Directions::BACK>()._data;
     new (data) T(std::forward<U>(value));
 }
 template<class T, class TBlockSize>
 template<class... TArgs>
 constexpr T& List<T, TBlockSize>::emplace_back(TArgs&&... value)
 {
-    auto* data = this->requestFreePlace(Positions::BACK)._data;
-    if (data == nullptr)
-    {
-        std::abort();
-    }
+    auto* data = this->requestFreePlace<Directions::BACK>()._data;
     new (data) T(std::forward<TArgs...>(value...));
 }
 template<class T, class TBlockSize>
 template<class U>
 constexpr void List<T, TBlockSize>::push_front(U&& value)
 {
-    auto* data = this->requestFreePlace(Positions::FRONT)._data;
-    if (data == nullptr)
-    {
-        std::abort();
-    }
+    auto* data = this->requestFreePlace<Directions::FRONT>()._data;
     new (data) T(std::forward<U>(value));
 }
 template<class T, class TBlockSize>
 template<class... TArgs>
 constexpr T& List<T, TBlockSize>::emplace_front(TArgs&&... value)
 {
-    auto* data = this->requestFreePlace(Positions::FRONT)._data;
-    if (data == nullptr)
-    {
-        std::abort();
-    }
+    auto* data = this->requestFreePlace<Directions::FRONT>()._data;
     new (data) T(std::forward<TArgs...>(value...));
 }
 
@@ -212,135 +196,106 @@ template<class U>
 constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(const_iterator pos, U&& value)
 {
     if (pos._dataLocation._position == 0)
-    {//position is the end so we cab just push back
-        pos._dataLocation = this->requestFreePlace(Positions::BACK);
+    {//position is the end so we can just push back
+        pos._dataLocation = this->requestFreePlace<Directions::BACK>();
         pos._block = this->g_lastBlock;
-        if (pos._dataLocation._data == nullptr)
-        {
-            std::abort();
-        }
         new (pos._dataLocation._data) T(std::forward<U>(value));
         return pos;
     }
 
-    TBlockSize positionBefore = pos._dataLocation._position>>1;
+    //Getting the mask for all bits before the position
+    //ex. position = 0000'1000
+    //    maskBefore = 0000'0111
+    TBlockSize maskBefore = pos._dataLocation._position-1;
 
-    if (positionBefore == 0)
-    {//We have to insert into the last block
-        if (pos._block->_lastBlock == nullptr || pos._block->_lastBlock->_occupiedFlags == std::numeric_limits<TBlockSize>::max())
+    if ((pos._block->_occupiedFlags & maskBefore) == maskBefore)
+    {//We can't insert into the current block as it's full, we have to create a new block or shift last block
+        auto lastBlockInsertIndex = gIndexLast;
+        Block* lastBlock = pos._block->_lastBlock;
+
+        //We can check if we can insert into the last block
+        if (lastBlock == nullptr || lastBlock->_occupiedFlags == std::numeric_limits<TBlockSize>::max())
         {//Well we can't do that, we have to create a new block
-            ++this->g_dataSize;
-            pos._block = this->insertNewBlock(pos._block, Positions::FRONT);
-            pos._block->_occupiedFlags |= gPositionMid;
-            pos._dataLocation._data = reinterpret_cast<T*>(&pos._block->_data)+gIndexMid;
-            pos._dataLocation._position = gPositionMid;
-
-            new (pos._dataLocation._data) T(std::forward<U>(value));
-            return pos;
+            lastBlock = this->insertNewBlock<Directions::FRONT>(pos._block);
+            lastBlockInsertIndex = gIndexMid;
         }
-
-        if (pos._block->_lastBlock->_occupiedFlags & gPositionLast)
-        {//We have to shift data inside the last block
-            shiftBlockToFreeUpLastPosition(pos._block->_lastBlock);
-
-            //Add the new value
-            ++this->g_dataSize;
-            pos._block->_lastBlock->_occupiedFlags |= gPositionLast;
-            pos._dataLocation._data = reinterpret_cast<T*>(&pos._block->_lastBlock->_data)+gIndexLast;
-            pos._dataLocation._position = gPositionLast;
-            pos._block = pos._block->_lastBlock;
-
-            new (pos._dataLocation._data) T(std::forward<U>(value));
-            return pos;
-        }
-
-        //We can just insert the value as we have some place at the end of the last block
-        ++this->g_dataSize;
-        pos._block->_lastBlock->_occupiedFlags |= gPositionLast;
-        pos._dataLocation._data = reinterpret_cast<T*>(&pos._block->_lastBlock->_data)+gIndexLast;
-        pos._dataLocation._position = gPositionLast;
-
-        new (pos._dataLocation._data) T(std::forward<U>(value));
-        return pos;
-    }
-
-    //We have to insert into the current block
-    if (!(pos._block->_occupiedFlags & positionBefore))
-    {//We have the place to insert
-        ++this->g_dataSize;
-        pos._block->_occupiedFlags |= positionBefore;
-        --pos._dataLocation._data;
-        pos._dataLocation._position = positionBefore;
-
-        new (pos._dataLocation._data) T(std::forward<U>(value));
-        return pos;
-    }
-
-    //We have to shift data inside the current block
-    //First we have to find empty place
-    TBlockSize emptyPlacePosition = positionBefore;
-    T* data = pos._dataLocation._data-1;
-    do
-    {
-        if (!(pos._block->_occupiedFlags & emptyPlacePosition))
+        else if (lastBlock->_occupiedFlags & gPositionLast)
         {
-            break;
+            shiftBlockToFreeUpLastPosition(lastBlock);
         }
-        emptyPlacePosition >>= 1;
-        --data;
-    }
-    while (emptyPlacePosition != 0);
 
-    if (emptyPlacePosition != 0)
-    {//We have some place to insert
-        //Let's shift
-        for (TBlockSize iPos = emptyPlacePosition; iPos != pos._dataLocation._position>>1; iPos <<= 1)
+        if (maskBefore == 0)
+        {//We have to insert into the last block
+            ++this->g_dataSize;
+            pos._block = lastBlock;
+            pos._dataLocation._data = reinterpret_cast<T*>(&lastBlock->_data) + lastBlockInsertIndex;
+            pos._dataLocation._position = gPositionFirst << lastBlockInsertIndex;
+            lastBlock->_occupiedFlags |= pos._dataLocation._position;
+            new (pos._dataLocation._data) T(std::forward<U>(value));
+            return pos;
+        }
+
+        //Insert the first value of the block into the last block
+        lastBlock->_occupiedFlags |= gPositionFirst << lastBlockInsertIndex;
+        T* lastBlockData = reinterpret_cast<T*>(&lastBlock->_data) + lastBlockInsertIndex;
+        T* data = reinterpret_cast<T*>(&pos._block->_data);
+        new (lastBlockData) T(std::move(*data));
+        data->~T();
+
+        //Now we can shift the rest of the data
+        for (TBlockSize iPos = gPositionFirst; iPos != pos._dataLocation._position>>1; iPos <<= 1)
         {
             new (data) T(std::move(*(data+1)));
             ++data;
             data->~T();
         }
 
+        //Insert the new value
         ++this->g_dataSize;
-        pos._block->_occupiedFlags |= emptyPlacePosition;
         pos._dataLocation._position >>= 1;
         pos._dataLocation._data = data;
         new (data) T(std::forward<U>(value));
         return pos;
     }
 
-    TBlockSize lastBlockInsertPosition = gPositionLast;
-    Block* lastBlock = pos._block->_lastBlock;
+    if (!(pos._block->_occupiedFlags & pos._dataLocation._position>>1))
+    {//We have the place to insert it just before the current position
+        ++this->g_dataSize;
+        pos._dataLocation._position >>= 1;
+        pos._block->_occupiedFlags |= pos._dataLocation._position;
+        --pos._dataLocation._data;
 
-    //We can check if we can insert into the last block
-    if (pos._block->_lastBlock == nullptr || pos._block->_lastBlock->_occupiedFlags == std::numeric_limits<TBlockSize>::max())
-    {//Well we can't do that, we have to create a new block
-        lastBlock = this->insertNewBlock(pos._block, Positions::FRONT);
-        lastBlockInsertPosition = gPositionMid;
+        new (pos._dataLocation._data) T(std::forward<U>(value));
+        return pos;
     }
-    else
+
+    TBlockSize notOccupiedBefore = ~pos._block->_occupiedFlags & maskBefore;
+
+    //We have to shift data inside the current block
+    TBlockSize position = gPositionFirst;
+    T* data = reinterpret_cast<T*>(pos._block->_data);
+    do
     {
-        shiftBlockToFreeUpLastPosition(pos._block->_lastBlock);
+        notOccupiedBefore &=~ position;
+
+        if (notOccupiedBefore == 0)
+        {//We are in the last not occupied place
+            pos._block->_occupiedFlags |= position;
+            new (data) T(std::move(*(data+1)));
+            ++data;
+            data->~T();
+        }
+        else
+        {
+            ++data;
+        }
+
+        position <<= 1;
     }
+    while (position != pos._dataLocation._position>>1);
 
-    //Insert the first value of the block into the last block
-    lastBlock->_occupiedFlags |= lastBlockInsertPosition;
-    T* lastBlockData = reinterpret_cast<T*>(&lastBlock->_data);
-    data = reinterpret_cast<T*>(&pos._block->_data);
-    new (lastBlockData) T(std::move(*data));
-    data->~T();
-
-    //Now we can shift the rest of the data
-    for (TBlockSize iPos = gPositionFirst; iPos != pos._dataLocation._position>>1; iPos <<= 1)
-    {
-        new (data) T(std::move(*(data+1)));
-        ++data;
-        data->~T();
-    }
-
-    //Insert the new value
     ++this->g_dataSize;
-    pos._dataLocation._position >>= 1;
+    pos._dataLocation._position = position;
     pos._dataLocation._data = data;
     new (data) T(std::forward<U>(value));
     return pos;
@@ -436,13 +391,14 @@ constexpr T const& List<T, TBlockSize>::back() const
 }
 
 template<class T, class TBlockSize>
-constexpr typename List<T, TBlockSize>::DataLocation List<T, TBlockSize>::requestFreePlace(Positions direction)
+template<typename List<T, TBlockSize>::Directions TDirection>
+constexpr typename List<T, TBlockSize>::DataLocation List<T, TBlockSize>::requestFreePlace()
 {
-    if (direction == Positions::FRONT)
+    if constexpr (TDirection == Directions::FRONT)
     {
         if (this->g_cacheFrontIndex > gIndexLast)
         {//We have to allocate a new block as the index is out of range
-            this->allocateBlock(Positions::FRONT);
+            this->allocateBlock<Directions::FRONT>();
             this->g_cacheFrontIndex = gIndexLast;
         }
 
@@ -462,7 +418,7 @@ constexpr typename List<T, TBlockSize>::DataLocation List<T, TBlockSize>::reques
     {
         if (this->g_cacheBackIndex > gIndexLast)
         {//We have to allocate a new block as the index is out of range
-            this->allocateBlock(Positions::BACK);
+            this->allocateBlock<Directions::BACK>();
             this->g_cacheBackIndex = 0;
         }
 
@@ -480,9 +436,10 @@ constexpr typename List<T, TBlockSize>::DataLocation List<T, TBlockSize>::reques
     }
 }
 template<class T, class TBlockSize>
-constexpr void List<T, TBlockSize>::allocateBlock(Positions direction)
+template<typename List<T, TBlockSize>::Directions TDirection>
+constexpr void List<T, TBlockSize>::allocateBlock()
 {
-    if (direction == Positions::FRONT)
+    if constexpr (TDirection == Directions::FRONT)
     {
         auto* oldBlock = this->g_startBlock;
 
@@ -507,9 +464,10 @@ constexpr typename List<T, TBlockSize>::Block* List<T, TBlockSize>::allocateBloc
     return new Block{};
 }
 template<class T, class TBlockSize>
-constexpr typename List<T, TBlockSize>::Block* List<T, TBlockSize>::insertNewBlock(Block* block, Positions direction)
+template<typename List<T, TBlockSize>::Directions TDirection>
+constexpr typename List<T, TBlockSize>::Block* List<T, TBlockSize>::insertNewBlock(Block* block)
 {
-    if (direction == Positions::FRONT)
+    if constexpr (TDirection == Directions::FRONT)
     {
         auto* oldBlock = block->_lastBlock;
 

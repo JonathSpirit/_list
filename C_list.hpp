@@ -15,7 +15,7 @@ class List
 {
     static_assert(std::is_fundamental_v<TBlockSize> && std::is_unsigned_v<TBlockSize>, "TBlockSize must be fundamental and unsigned type !");
 
-    enum class Positions
+    enum class Directions
     {
         FRONT,
         BACK
@@ -134,12 +134,14 @@ public:
     [[nodiscard]] constexpr T& back();
     [[nodiscard]] constexpr T const& back() const;
 
-
 private:
-    constexpr DataLocation requestFreePlace(Positions direction);
-    constexpr void allocateBlock(Positions direction);
+    template<Directions TDirection>
+    constexpr DataLocation requestFreePlace();
+    template<Directions TDirection>
+    constexpr void allocateBlock();
     constexpr static Block* allocateBlock();
-    constexpr Block* insertNewBlock(Block* block, Positions direction);
+    template<Directions TDirection>
+    constexpr Block* insertNewBlock(Block* block);
     constexpr static void shiftBlockToFreeUpLastPosition(Block* block);
 
     constexpr void freeBlock(Block* block);
