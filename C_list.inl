@@ -11,6 +11,40 @@ constexpr List<T, TBlockSize>::List() :
     this->g_lastBlock = this->g_startBlock;
 }
 template<class T, class TBlockSize>
+template<class TInputIt>
+constexpr List<T, TBlockSize>::List(TInputIt first, TInputIt last) :
+        List()
+{
+    for (auto it=first; it!=last; ++it)
+    {
+        this->push_back(*it);
+    }
+}
+template<class T, class TBlockSize>
+constexpr List<T, TBlockSize>::List(List const& r) :
+        List()
+{
+    for (auto const& value : r)
+    {
+        this->push_back(value);
+    }
+}
+template<class T, class TBlockSize>
+constexpr List<T, TBlockSize>::List(List&& r) noexcept :
+        g_startBlock{r.g_startBlock},
+        g_lastBlock{r.g_lastBlock},
+        g_dataSize{r.g_dataSize},
+
+        g_cacheFrontIndex{r.g_cacheFrontIndex},
+        g_cacheBackIndex{r.g_cacheBackIndex}
+{
+    r.g_startBlock = nullptr;
+    r.g_lastBlock = nullptr;
+    r.g_dataSize = 0;
+    r.g_cacheFrontIndex = gIndexMid-1;
+    r.g_cacheBackIndex = gIndexMid;
+}
+template<class T, class TBlockSize>
 constexpr List<T, TBlockSize>::List(std::size_t size) :
         List()
 {
@@ -30,6 +64,34 @@ List<T, TBlockSize>::~List()
         this->freeBlock(block);
         block = nextBloc;
     }
+}
+
+template<class T, class TBlockSize>
+constexpr List<T, TBlockSize>& List<T, TBlockSize>::operator=(List const& r)
+{
+    this->clear();
+    for (auto const& value : r)
+    {
+        this->push_back(value);
+    }
+    return *this;
+}
+template<class T, class TBlockSize>
+constexpr List<T, TBlockSize>& List<T, TBlockSize>::operator=(List&& r) noexcept
+{
+    this->clear();
+    this->g_startBlock = r.g_startBlock;
+    this->g_lastBlock = r.g_lastBlock;
+    this->g_dataSize = r.g_dataSize;
+    this->g_cacheFrontIndex = r.g_cacheFrontIndex;
+    this->g_cacheBackIndex = r.g_cacheBackIndex;
+
+    r.g_startBlock = nullptr;
+    r.g_lastBlock = nullptr;
+    r.g_dataSize = 0;
+    r.g_cacheFrontIndex = gIndexMid-1;
+    r.g_cacheBackIndex = gIndexMid;
+    return *this;
 }
 
 template<class T, class TBlockSize>

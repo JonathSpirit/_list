@@ -10,7 +10,7 @@
 namespace gg
 {
 
-template<class T, class TBlockSize>
+template<class T, class TBlockSize=uint16_t>
 class List
 {
     static_assert(std::is_fundamental_v<TBlockSize> && std::is_unsigned_v<TBlockSize>, "TBlockSize must be fundamental and unsigned type !");
@@ -80,6 +80,9 @@ public:
         constexpr iterator& operator--() {base_iterator::operator--(); return *this;}
         constexpr iterator& operator++() {base_iterator::operator++(); return *this;}
 
+        constexpr iterator operator--(int) {auto copy=*this; base_iterator::operator--(); return copy;}
+        constexpr iterator operator++(int) {auto copy=*this; base_iterator::operator++(); return copy;}
+
         [[nodiscard]] constexpr typename base_iterator::reference operator*() const;
         [[nodiscard]] constexpr typename base_iterator::pointer operator->() const;
 
@@ -98,6 +101,9 @@ public:
         constexpr const_iterator& operator--() {base_iterator::operator--(); return *this;}
         constexpr const_iterator& operator++() {base_iterator::operator++(); return *this;}
 
+        constexpr const_iterator operator--(int) {auto copy=*this; base_iterator::operator--(); return copy;}
+        constexpr const_iterator operator++(int) {auto copy=*this; base_iterator::operator++(); return copy;}
+
         [[nodiscard]] constexpr typename base_iterator::const_reference operator*() const;
         [[nodiscard]] constexpr typename base_iterator::const_pointer operator->() const;
 
@@ -106,8 +112,15 @@ public:
     };
 
     constexpr List();
+    template<class TInputIt>
+    constexpr List(TInputIt first, TInputIt last);
+    constexpr List(List const& r);
+    constexpr List(List&& r) noexcept;
     constexpr explicit List(std::size_t size);
     ~List();
+
+    constexpr List& operator=(List const& r);
+    constexpr List& operator=(List&& r) noexcept;
 
     constexpr void clear();
 

@@ -4,7 +4,7 @@ project(_list)
 set(CMAKE_CXX_STANDARD 17)
 
 #set flag -O1 in release mode
-set(CMAKE_CXX_FLAGS_RELEASE "-O1 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O1 -DNDEBUG -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wpedantic")
 
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
