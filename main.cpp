@@ -9,305 +9,258 @@
 #include <memory>
 #include <cstdint>
 #include <cmath>
-#include <cassert>
 #include <iostream>
 #include <array>
 
-#if 1
+#include <matplot/matplot.h>
 
-struct Results
+#define FIG_SIZE_W 800
+#define FIG_SIZE_H 600
+
+using namespace matplot;
+
+using LogSteps = std::vector<uint32_t>;
+
+LogSteps BuildLogStep(uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
 {
-    std::string _name;
-    std::vector<std::pair<uint64_t, uint64_t> > _data;
-};
+    auto const dresult = logspace(nLogStart, nLogStop, nLogCount);
+    LogSteps result(dresult.size());
+    for (std::size_t i=0; i<dresult.size(); ++i)
+    {
+        result[i] = static_cast<LogSteps::value_type>(dresult[i]);
+    }
+    return result;
+}
 
 template<class TContainer>
-void test_pushFront(char const* const containerName, Results& result, uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
+void test_pushFront(std::string_view containerName, LogSteps const& steps)
 {
     std::cout << "test: pushFront, on " << containerName << std::endl;
 
-    result._name = containerName;
+    std::vector<uint64_t> resultX;
+    std::vector<uint64_t> resultY;
 
-    for (uint32_t iLogStep=nLogStart; iLogStep<nLogStop; ++iLogStep)
+    for (auto const iterations : steps)
     {
-        uint32_t logStep = static_cast<uint32_t>(std::pow(10, iLogStep+1))/nLogCount;
+        std::cout << "\titerations: " << iterations << " ";
 
-        for (uint32_t iLog=static_cast<uint32_t>(iLogStep!=nLogStart); iLog<nLogCount; ++iLog)
+        TContainer testContainer{};
+
+        auto start = std::chrono::high_resolution_clock::now();
+        for (uint32_t i = 0; i < iterations; ++i)
         {
-            uint32_t iterations = static_cast<uint32_t>(std::pow(10, iLogStep)) + iLog * logStep;
-
-            std::cout << "\titerations: " << iterations << " ";
-
-            TContainer testContainer{};
-
-            auto start = std::chrono::high_resolution_clock::now();
-            for (uint32_t i = 0; i < iterations; ++i)
-            {
-                testContainer.push_front(typename TContainer::value_type{});
-            }
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-            std::cout << "time: " << time << '\n';
-
-            result._data.emplace_back(iterations, time);
+            testContainer.push_front(typename TContainer::value_type{});
         }
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+
+        std::cout << "time: " << time << '\n';
+
+        resultX.emplace_back(iterations);
+        resultY.emplace_back(time);
     }
 
+    auto handle = semilogx(resultX, resultY);
+    handle->display_name(containerName);
+    handle->line_width(3.0f);
     std::cout << "---" << std::endl;
 }
 template<class TContainer>
-void test_pushBack(char const* const containerName, Results& result, uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
+void test_pushBack(std::string_view containerName, LogSteps const& steps)
 {
     std::cout << "test: pushBack, on " << containerName << std::endl;
 
-    result._name = containerName;
+    std::vector<uint64_t> resultX;
+    std::vector<uint64_t> resultY;
 
-    for (uint32_t iLogStep=nLogStart; iLogStep<nLogStop; ++iLogStep)
+    for (auto const iterations : steps)
     {
-        uint32_t logStep = static_cast<uint32_t>(std::pow(10, iLogStep+1))/nLogCount;
+        std::cout << "\titerations: " << iterations << " ";
 
-        for (uint32_t iLog=static_cast<uint32_t>(iLogStep!=nLogStart); iLog<nLogCount; ++iLog)
+        TContainer testContainer{};
+
+        auto start = std::chrono::high_resolution_clock::now();
+        for (uint32_t i = 0; i < iterations; ++i)
         {
-            uint32_t iterations = static_cast<uint32_t>(std::pow(10, iLogStep)) + iLog * logStep;
-
-            std::cout << "\titerations: " << iterations << " ";
-
-            TContainer testContainer{};
-
-            auto start = std::chrono::high_resolution_clock::now();
-            for (uint32_t i = 0; i < iterations; ++i)
-            {
-                testContainer.push_back(typename TContainer::value_type{});
-            }
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-            std::cout << "time: " << time << '\n';
-
-            result._data.emplace_back(iterations, time);
+            testContainer.push_back(typename TContainer::value_type{});
         }
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+
+        std::cout << "time: " << time << '\n';
+
+        resultX.emplace_back(iterations);
+        resultY.emplace_back(time);
     }
 
+    auto handle = semilogx(resultX, resultY);
+    handle->display_name(containerName);
+    handle->line_width(3.0f);
     std::cout << "---" << std::endl;
 }
 template<class TContainer>
-void test_creation(char const* const containerName, Results& result, uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
+void test_creation(std::string_view containerName, LogSteps const& steps)
 {
     std::cout << "test: creation, on " << containerName << std::endl;
 
-    result._name = containerName;
+    std::vector<uint64_t> resultX;
+    std::vector<uint64_t> resultY;
 
-    for (uint32_t iLogStep=nLogStart; iLogStep<nLogStop; ++iLogStep)
+    for (auto const iterations : steps)
     {
-        uint32_t logStep = static_cast<uint32_t>(std::pow(10, iLogStep+1))/nLogCount;
+        std::cout << "\titerations: " << iterations << " ";
 
-        for (uint32_t iLog=static_cast<uint32_t>(iLogStep!=nLogStart); iLog<nLogCount; ++iLog)
-        {
-            uint32_t iterations = static_cast<uint32_t>(std::pow(10, iLogStep)) + iLog * logStep;
+        auto start = std::chrono::high_resolution_clock::now();
+        TContainer testContainer{iterations};
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
 
-            std::cout << "\titerations: " << iterations << " ";
+        std::cout << "time: " << time << '\n';
 
-            auto start = std::chrono::high_resolution_clock::now();
-            TContainer testContainer{iterations};
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-            std::cout << "time: " << time << '\n';
-
-            result._data.emplace_back(iterations, time);
-        }
+        resultX.emplace_back(iterations);
+        resultY.emplace_back(time);
     }
 
+    auto handle = semilogx(resultX, resultY);
+    handle->display_name(containerName);
+    handle->line_width(3.0f);
     std::cout << "---" << std::endl;
 }
 template<class TContainer>
-void test_destruction(char const* const containerName, Results& result, uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
+void test_destruction(std::string_view containerName, LogSteps const& steps)
 {
     std::cout << "test: destruction, on " << containerName << std::endl;
 
-    result._name = containerName;
+    std::vector<uint64_t> resultX;
+    std::vector<uint64_t> resultY;
 
-    for (uint32_t iLogStep=nLogStart; iLogStep<nLogStop; ++iLogStep)
+    for (auto const iterations : steps)
     {
-        uint32_t logStep = static_cast<uint32_t>(std::pow(10, iLogStep+1))/nLogCount;
+        std::cout << "\titerations: " << iterations << " ";
 
-        for (uint32_t iLog=static_cast<uint32_t>(iLogStep!=nLogStart); iLog<nLogCount; ++iLog)
-        {
-            uint32_t iterations = static_cast<uint32_t>(std::pow(10, iLogStep)) + iLog * logStep;
+        auto* testContainer = new TContainer{iterations};
+        auto start = std::chrono::high_resolution_clock::now();
+        delete testContainer;
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
 
-            std::cout << "\titerations: " << iterations << " ";
+        std::cout << "time: " << time << '\n';
 
-            auto* testContainer = new TContainer{iterations};
-            auto start = std::chrono::high_resolution_clock::now();
-            delete testContainer;
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-            std::cout << "time: " << time << '\n';
-
-            result._data.emplace_back(iterations, time);
-        }
+        resultX.emplace_back(iterations);
+        resultY.emplace_back(time);
     }
 
+    auto handle = semilogx(resultX, resultY);
+    handle->display_name(containerName);
+    handle->line_width(3.0f);
     std::cout << "---" << std::endl;
 }
 template<class TContainer>
-void test_erase(char const* const containerName, Results& result, uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
+void test_erase(std::string_view containerName, LogSteps const& steps)
 {
     std::cout << "test: erase, on " << containerName << std::endl;
 
-    result._name = containerName;
+    std::vector<uint64_t> resultX;
+    std::vector<uint64_t> resultY;
 
-    for (uint32_t iLogStep=nLogStart; iLogStep<nLogStop; ++iLogStep)
+    for (auto const iterations : steps)
     {
-        uint32_t logStep = static_cast<uint32_t>(std::pow(10, iLogStep+1))/nLogCount;
+        std::cout << "\titerations: " << iterations << " ";
 
-        for (uint32_t iLog=static_cast<uint32_t>(iLogStep!=nLogStart); iLog<nLogCount; ++iLog)
+        TContainer testContainer{iterations};
+        auto start = std::chrono::high_resolution_clock::now();
+        for (uint32_t i = 0; i < iterations; ++i)
         {
-            uint32_t iterations = static_cast<uint32_t>(std::pow(10, iLogStep)) + iLog * logStep;
-
-            std::cout << "\titerations: " << iterations << " ";
-
-            TContainer testContainer{iterations};
-            auto start = std::chrono::high_resolution_clock::now();
-            for (uint32_t i = 0; i < iterations; ++i)
-            {
-                auto itMiddle = testContainer.begin();
-                for (std::size_t a=0; a<testContainer.size()/2; ++a)
-                {
-                    ++itMiddle;
-                }
-                testContainer.erase(itMiddle);
-            }
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-            std::cout << "time: " << time << '\n';
-
-            result._data.emplace_back(iterations, time);
-        }
-    }
-
-    std::cout << "---" << std::endl;
-}
-template<class TContainer>
-void test_insert(char const* const containerName, Results& result, uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
-{
-    std::cout << "test: insert, on " << containerName << std::endl;
-
-    result._name = containerName;
-
-    for (uint32_t iLogStep=nLogStart; iLogStep<nLogStop; ++iLogStep)
-    {
-        uint32_t logStep = static_cast<uint32_t>(std::pow(10, iLogStep+1))/nLogCount;
-
-        for (uint32_t iLog=static_cast<uint32_t>(iLogStep!=nLogStart); iLog<nLogCount; ++iLog)
-        {
-            uint32_t iterations = static_cast<uint32_t>(std::pow(10, iLogStep)) + iLog * logStep;
-
-            std::cout << "\titerations: " << iterations << " ";
-
-            TContainer testContainer{iterations};
-
             auto itMiddle = testContainer.begin();
             for (std::size_t a=0; a<testContainer.size()/2; ++a)
             {
                 ++itMiddle;
             }
-
-            auto start = std::chrono::high_resolution_clock::now();
-            for (uint32_t i = 0; i < iterations; ++i)
-            {
-                testContainer.insert(itMiddle, typename TContainer::value_type{});
-            }
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-            std::cout << "time: " << time << '\n';
-
-            result._data.emplace_back(iterations, time);
+            testContainer.erase(itMiddle);
         }
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+
+        std::cout << "time: " << time << '\n';
+
+        resultX.emplace_back(iterations);
+        resultY.emplace_back(time);
     }
 
+    auto handle = semilogx(resultX, resultY);
+    handle->display_name(containerName);
+    handle->line_width(3.0f);
     std::cout << "---" << std::endl;
 }
 template<class TContainer>
-void test_iterations(char const* const containerName, Results& result, uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
+void test_insert(std::string_view containerName, LogSteps const& steps)
+{
+    std::cout << "test: insert, on " << containerName << std::endl;
+
+    std::vector<uint64_t> resultX;
+    std::vector<uint64_t> resultY;
+
+    for (auto const iterations : steps)
+    {
+        std::cout << "\titerations: " << iterations << " ";
+
+        TContainer testContainer{iterations};
+
+        auto itMiddle = testContainer.begin();
+        for (std::size_t a=0; a<testContainer.size()/2; ++a)
+        {
+            ++itMiddle;
+        }
+
+        auto start = std::chrono::high_resolution_clock::now();
+        for (uint32_t i = 0; i < iterations; ++i)
+        {
+            testContainer.insert(itMiddle, typename TContainer::value_type{});
+        }
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+
+        std::cout << "time: " << time << '\n';
+
+        resultX.emplace_back(iterations);
+        resultY.emplace_back(time);
+    }
+
+    auto handle = semilogx(resultX, resultY);
+    handle->display_name(containerName);
+    handle->line_width(3.0f);
+    std::cout << "---" << std::endl;
+}
+template<class TContainer>
+void test_iterations(std::string_view containerName, LogSteps const& steps)
 {
     std::cout << "test: iterations, on " << containerName << std::endl;
 
-    result._name = containerName;
+    std::vector<uint64_t> resultX;
+    std::vector<uint64_t> resultY;
 
-    for (uint32_t iLogStep=nLogStart; iLogStep<nLogStop; ++iLogStep)
+    for (auto const iterations : steps)
     {
-        uint32_t logStep = static_cast<uint32_t>(std::pow(10, iLogStep+1))/nLogCount;
+        std::cout << "\titerations: " << iterations << " ";
 
-        for (uint32_t iLog=static_cast<uint32_t>(iLogStep!=nLogStart); iLog<nLogCount; ++iLog)
-        {
-            uint32_t iterations = static_cast<uint32_t>(std::pow(10, iLogStep)) + iLog * logStep;
+        TContainer testContainer{iterations};
 
-            std::cout << "\titerations: " << iterations << " ";
+        auto start = std::chrono::high_resolution_clock::now();
+        for (auto it=testContainer.begin(); it!=testContainer.end(); ++it) {}
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
 
-            TContainer testContainer{iterations};
+        std::cout << "time: " << time << '\n';
 
-            auto start = std::chrono::high_resolution_clock::now();
-            for (auto it=testContainer.begin(); it!=testContainer.end(); ++it) {}
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-            std::cout << "time: " << time << '\n';
-
-            result._data.emplace_back(iterations, time);
-        }
+        resultX.emplace_back(iterations);
+        resultY.emplace_back(time);
     }
 
+    auto handle = semilogx(resultX, resultY);
+    handle->display_name(containerName);
+    handle->line_width(3.0f);
     std::cout << "---" << std::endl;
 }
-
-void writeResults(const std::string& filename, const std::vector<Results>& resultsVector)
-{
-    std::ofstream csv{filename};
-
-    if (!csv)
-    {
-        std::cout << "erreur c chiant merde !" << std::endl;
-        return;
-    }
-
-    for (auto& results : resultsVector)
-    {
-        if (&results == &(*resultsVector.begin()))
-        {
-            csv << ',' << results._name << ',';
-        }
-        else
-        {
-            csv << results._name << ',';
-        }
-    }
-    csv << std::endl;
-
-    for (unsigned int i=0; i<resultsVector.back()._data.size(); ++i)
-    {
-        for (auto& results : resultsVector)
-        {
-            if (&results == &(*resultsVector.begin()))
-            {
-                csv << results._data[i].first << ',' << results._data[i].second << ',';
-            }
-            else
-            {
-                csv << results._data[i].second << ',';
-            }
-        }
-        csv << std::endl;
-    }
-    csv << std::endl;
-
-    csv.close();
-}
-#endif
 
 int main()
 {
@@ -354,199 +307,239 @@ int main()
     std::cout << "end-2: " << static_cast<int32_t>(*----testList.end()) << std::endl;
     std::cout << "final size: " << testList.size() << std::endl;
 
-    return 0;
+    //return 0;
 
 #ifdef NDEBUG
-    std::string mode = "release_";
+    std::string mode = "release";
 #else
-    std::string mode = "debug_";
+    std::string mode = "debug";
 #endif
 
 #if 1
     {
-        std::vector<Results> results;
+        figure()->size(FIG_SIZE_W, FIG_SIZE_H);
+        title("test: pushback "+mode);
+        auto cfgLegend = legend({});
+        cfgLegend->box(false);
+        cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        grid(true);
+        hold(true);
+        xlabel("iteration");
+        ylabel("time us");
 
-        results.emplace_back();
-        test_pushBack<std::list<std::string> >("std::list<std::string>", results.back(), 2, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 10);
+        xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
-        results.emplace_back();
-        test_pushBack<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 8, 10);
+        test_pushBack<std::list<std::string> >("std::list<std::string>", steps);
 
-        results.emplace_back();
-        test_pushBack<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 8, 10);
+        test_pushBack<std::vector<std::string> >("std::vector<std::string>", steps);
 
-        results.emplace_back();
-        test_pushBack<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_pushBack<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_pushBack<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_pushBack<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 8, 10);
+        test_pushBack<std::deque<std::string> >("std::deque<std::string>", steps);
 
-        writeResults(mode+"test_pushBack.csv", results);
+        test_pushBack<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", steps);
+        test_pushBack<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", steps);
+        test_pushBack<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", steps);
+        test_pushBack<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", steps);
+
+        save("test_push_back.png");
     }
 #endif
 
 #if 1
     {
-        std::vector<Results> results;
+        figure()->size(FIG_SIZE_W, FIG_SIZE_H);
+        title("test: creation "+mode);
+        auto cfgLegend = legend({});
+        cfgLegend->box(false);
+        cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        grid(true);
+        hold(true);
+        xlabel("iteration");
+        ylabel("time us");
 
-        results.emplace_back();
-        test_creation<std::list<std::string> >("std::list<std::string>", results.back(), 2, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 10);
+        xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
-        results.emplace_back();
-        test_creation<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 8, 10);
+        test_creation<std::list<std::string> >("std::list<std::string>", steps);
 
-        results.emplace_back();
-        test_creation<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 8, 10);
+        test_creation<std::vector<std::string> >("std::vector<std::string>", steps);
 
-        results.emplace_back();
-        test_creation<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_creation<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_creation<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_creation<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 8, 10);
+        test_creation<std::deque<std::string> >("std::deque<std::string>", steps);
 
-        writeResults(mode+"test_creation.csv", results);
+        test_creation<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", steps);
+        test_creation<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", steps);
+        test_creation<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", steps);
+        test_creation<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", steps);
+
+        save("test_creation.png");
     }
 #endif
 
 #if 1
     {
-        std::vector<Results> results;
+        figure()->size(FIG_SIZE_W, FIG_SIZE_H);
+        title("test: destruction "+mode);
+        auto cfgLegend = legend({});
+        cfgLegend->box(false);
+        cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        grid(true);
+        hold(true);
+        xlabel("iteration");
+        ylabel("time us");
 
-        results.emplace_back();
-        test_destruction<std::list<std::string> >("std::list<std::string>", results.back(), 2, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 10);
+        xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
-        results.emplace_back();
-        test_destruction<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 8, 10);
+        test_destruction<std::list<std::string> >("std::list<std::string>", steps);
 
-        results.emplace_back();
-        test_destruction<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 8, 10);
+        test_destruction<std::vector<std::string> >("std::vector<std::string>", steps);
 
-        results.emplace_back();
-        test_destruction<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_destruction<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_destruction<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_destruction<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 8, 10);
+        test_destruction<std::deque<std::string> >("std::deque<std::string>", steps);
 
-        writeResults(mode+"test_destruction.csv", results);
+        test_destruction<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", steps);
+        test_destruction<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", steps);
+        test_destruction<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", steps);
+        test_destruction<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", steps);
+
+        save("test_destruction.png");
     }
 #endif
 
 #if 1
     {
-        std::vector<Results> results;
+        figure()->size(FIG_SIZE_W, FIG_SIZE_H);
+        title("test: pushfront "+mode);
+        auto cfgLegend = legend({});
+        cfgLegend->box(false);
+        cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        grid(true);
+        hold(true);
+        xlabel("iteration");
+        ylabel("time us");
 
-        results.emplace_back();
-        test_pushFront<std::list<std::string> >("std::list<std::string>", results.back(), 2, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 10);
+        xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
-        results.emplace_back();
-        test_pushFront<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 8, 10);
+        test_pushFront<std::list<std::string> >("std::list<std::string>", steps);
 
-        results.emplace_back();
-        test_pushFront<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_pushFront<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_pushFront<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 8, 10);
-        results.emplace_back();
-        test_pushFront<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 8, 10);
+        test_pushFront<std::deque<std::string> >("std::deque<std::string>", steps);
 
-        writeResults(mode+"test_pushFront.csv", results);
+        test_pushFront<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", steps);
+        test_pushFront<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", steps);
+        test_pushFront<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", steps);
+        test_pushFront<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", steps);
+
+        save("test_pushFront.png");
     }
 #endif
 
 #if 1
     {
-        std::vector<Results> results;
+        figure()->size(FIG_SIZE_W, FIG_SIZE_H);
+        title("test: erase "+mode);
+        auto cfgLegend = legend({});
+        cfgLegend->box(false);
+        cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        grid(true);
+        hold(true);
+        xlabel("iteration");
+        ylabel("time us");
 
-        results.emplace_back();
-        test_erase<std::list<std::string> >("std::list<std::string>", results.back(), 2, 5, 10);
+        auto const steps = BuildLogStep(4, 5, 10);
+        xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
-        results.emplace_back();
-        test_erase<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 5, 10);
+        test_erase<std::list<std::string> >("std::list<std::string>", steps);
 
-        results.emplace_back();
-        test_erase<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 5, 10);
+        test_erase<std::vector<std::string> >("std::vector<std::string>", steps);
 
-        results.emplace_back();
-        test_erase<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 5, 10);
-        results.emplace_back();
-        test_erase<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 5, 10);
-        results.emplace_back();
-        test_erase<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 5, 10);
-        results.emplace_back();
-        test_erase<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 5, 10);
+        test_erase<std::deque<std::string> >("std::deque<std::string>", steps);
 
-        writeResults(mode+"test_erase.csv", results);
+        test_erase<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", steps);
+        test_erase<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", steps);
+        test_erase<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", steps);
+        test_erase<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", steps);
+
+        save("test_erase.png");
     }
 #endif
 
 #if 1
     {
-        std::vector<Results> results;
+        figure()->size(FIG_SIZE_W, FIG_SIZE_H);
+        title("test: iterations "+mode);
+        auto cfgLegend = legend({});
+        cfgLegend->box(false);
+        cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        grid(true);
+        hold(true);
+        xlabel("iteration");
+        ylabel("time us");
 
-        results.emplace_back();
-        test_iterations<std::list<std::string> >("std::list<std::string>", results.back(), 2, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 10);
+        xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
-        results.emplace_back();
-        test_iterations<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 8, 10);
+        test_iterations<std::list<std::string> >("std::list<std::string>", steps);
 
-        results.emplace_back();
-        test_iterations<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 8, 10);
+        test_iterations<std::vector<std::string> >("std::vector<std::string>", steps);
 
-        results.emplace_back();
-        test_iterations<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 6, 10);
-        results.emplace_back();
-        test_iterations<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 6, 10);
-        results.emplace_back();
-        test_iterations<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 6, 10);
-        results.emplace_back();
-        test_iterations<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 6, 10);
+        test_iterations<std::deque<std::string> >("std::deque<std::string>", steps);
 
-        writeResults(mode+"test_iterations.csv", results);
+        test_iterations<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", steps);
+        test_iterations<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", steps);
+        test_iterations<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", steps);
+        test_iterations<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", steps);
+
+        save("test_iterations.png");
     }
 #endif
 
 #if 1
     {
-        std::vector<Results> results;
+        figure()->size(FIG_SIZE_W, FIG_SIZE_H);
+        title("test: insert str "+mode);
+        auto cfgLegend = legend({});
+        cfgLegend->box(false);
+        cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        grid(true);
+        hold(true);
+        xlabel("iteration");
+        ylabel("time us");
 
-        results.emplace_back();
-        test_insert<std::list<std::string> >("std::list<std::string>", results.back(), 2, 7, 10);
-        results.emplace_back();
-        test_insert<std::list<uint32_t> >("std::list<uint32_t>", results.back(), 2, 7, 10);
+        auto const steps = BuildLogStep(6, 8, 20);
+        xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
-        //results.emplace_back();
-        //test_insert<std::vector<std::string> >("std::vector<std::string>", results.back(), 2, 5, 10);
-        //results.emplace_back();
-        //test_insert<std::vector<uint32_t> >("std::vector<uint32_t>", results.back(), 2, 5, 10);
+        test_insert<std::list<std::string> >("std::list<std::string>", steps);
 
-        //results.emplace_back();
-        //test_insert<std::deque<std::string> >("std::deque<std::string>", results.back(), 2, 5, 10);
-        //results.emplace_back();
-        //test_insert<std::deque<uint32_t> >("std::deque<uint32_t>", results.back(), 2, 5, 10);
+        test_insert<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", steps);
+        test_insert<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", steps);
+        test_insert<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", steps);
+        test_insert<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", steps);
 
-        results.emplace_back();
-        test_insert<gg::List<uint32_t, uint32_t> >("gg::List<uint32_t uint16_t>", results.back(), 2, 7, 10);
+        save("test_insert_str.png");
+    }
 
-        results.emplace_back();
-        test_insert<gg::List<std::string, uint8_t> >("gg::List<std::string uint8_t>", results.back(), 2, 7, 10);
-        results.emplace_back();
-        test_insert<gg::List<std::string, uint16_t> >("gg::List<std::string uint16_t>", results.back(), 2, 7, 10);
-        results.emplace_back();
-        test_insert<gg::List<std::string, uint32_t> >("gg::List<std::string uint32_t>", results.back(), 2, 7, 10);
-        results.emplace_back();
-        test_insert<gg::List<std::string, uint64_t> >("gg::List<std::string uint64_t>", results.back(), 2, 7, 10);
+    {
+        figure()->size(FIG_SIZE_W, FIG_SIZE_H);
+        title("test: insert int "+mode);
+        auto cfgLegend = legend({});
+        cfgLegend->box(false);
+        cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        grid(true);
+        hold(true);
+        xlabel("iteration");
+        ylabel("time us");
 
-        writeResults(mode+"test_insert.csv", results);
+        auto const steps = BuildLogStep(6, 8, 20);
+        xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
+
+        test_insert<std::list<uint32_t> >("std::list<uint32_t>", steps);
+
+        test_insert<gg::List<uint32_t, uint8_t> >("gg::List<uint32_t uint8_t>", steps);
+        test_insert<gg::List<uint32_t, uint16_t> >("gg::List<uint32_t uint16_t>", steps);
+        test_insert<gg::List<uint32_t, uint32_t> >("gg::List<uint32_t uint32_t>", steps);
+        test_insert<gg::List<uint32_t, uint64_t> >("gg::List<uint32_t uint64_t>", steps);
+
+        save("test_insert_int.png");
     }
 #endif
 
