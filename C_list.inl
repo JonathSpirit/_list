@@ -108,7 +108,7 @@ constexpr void List<T, TBlockSize>::clear()
 
     this->g_startBlock = this->allocateBlock();
     this->g_lastBlock = this->g_startBlock;
-    this->g_end->_lastBlock = this->g_lastBlock;
+    this->g_lastBlock->_lastBlock = this->g_lastBlock;
 
     this->g_cacheBackIndex = gIndexMid;
     this->g_cacheFrontIndex = gIndexMid-1;
