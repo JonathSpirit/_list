@@ -30,6 +30,9 @@ but with faster iterations.
 
 ## Tests
 
+Every release mode tests have been made with the flags :
+- -O1 -DNDEBUG -Wall -Wextra -Wpedantic
+
 ### Container creation
 
 - Container created with N elements (with N the number of iterations)
