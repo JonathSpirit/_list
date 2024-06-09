@@ -179,6 +179,9 @@ public:
     [[nodiscard]] constexpr T& back();
     [[nodiscard]] constexpr T const& back() const;
 
+    constexpr void splice(const_iterator pos, List& other, const_iterator it);
+    constexpr void splice(const_iterator pos, List&& other, const_iterator it);
+
 private:
     template<Directions TDirection>
     constexpr DataLocation requestFreePlace();

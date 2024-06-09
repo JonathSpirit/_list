@@ -473,6 +473,19 @@ constexpr T const& List<T, TBlockSize>::back() const
 }
 
 template<class T, class TBlockSize>
+constexpr void List<T, TBlockSize>::splice(const_iterator pos, List& other, const_iterator it)
+{
+    this->insert(pos, std::move(const_cast<T&>(*it)));
+    other.erase(it);
+}
+template<class T, class TBlockSize>
+constexpr void List<T, TBlockSize>::splice(const_iterator pos, List&& other, const_iterator it)
+{
+    this->insert(pos, std::move(const_cast<T&>(*it)));
+    other.erase(it);
+}
+
+template<class T, class TBlockSize>
 template<typename List<T, TBlockSize>::Directions TDirection>
 constexpr typename List<T, TBlockSize>::DataLocation List<T, TBlockSize>::requestFreePlace()
 {
