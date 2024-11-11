@@ -56,9 +56,10 @@ class List
         Block* _nextBlock{nullptr};
         TBlockSize _occupiedFlags{0};
     };
+    using BlockIndex = unsigned short;
 
-    constexpr static unsigned short gIndexLast = sizeof(TBlockSize) * 8 - 1;
-    constexpr static unsigned short gIndexMid = sizeof(TBlockSize) * 8 / 2;
+    constexpr static BlockIndex gIndexLast = sizeof(TBlockSize) * 8 - 1;
+    constexpr static BlockIndex gIndexMid = sizeof(TBlockSize) * 8 / 2;
     constexpr static TBlockSize gPositionFirst = 1;
     constexpr static TBlockSize gPositionLast = static_cast<TBlockSize>(1) << gIndexLast;
     constexpr static TBlockSize gPositionMid = static_cast<TBlockSize>(1) << gIndexMid;
@@ -198,8 +199,8 @@ private:
     Block* g_lastBlock;
     std::size_t g_dataSize;
 
-    unsigned short g_cacheFrontIndex;
-    unsigned short g_cacheBackIndex;
+    BlockIndex g_cacheFrontIndex;
+    BlockIndex g_cacheBackIndex;
 };
 
 #include "C_list.inl"
