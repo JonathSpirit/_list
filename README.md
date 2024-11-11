@@ -72,6 +72,10 @@ When inserting an element in the middle of the list, this will happen in order :
 Every release mode tests have been made with the flags :
 - -O1 -DNDEBUG -Wall -Wextra -Wpedantic
 
+And with hardware :
+- AMD Ryzen 9 5950X
+- 64GB DDR4 3200MHz
+
 ### Container creation
 
 - Container created with N elements (with N the number of iterations)
