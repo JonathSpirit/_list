@@ -472,6 +472,24 @@ constexpr T const& List<T, TBlockSize>::back() const
 }
 
 template<class T, class TBlockSize>
+constexpr void List<T, TBlockSize>::splice(const_iterator pos, List& other)
+{
+    for (auto& data : other)
+    {
+        this->insert(pos, std::move(data));
+    }
+    other.clear();
+}
+template<class T, class TBlockSize>
+constexpr void List<T, TBlockSize>::splice(const_iterator pos, List&& other)
+{
+    for (auto& data : other)
+    {
+        this->insert(pos, std::move(data));
+    }
+    other.clear();
+}
+template<class T, class TBlockSize>
 constexpr void List<T, TBlockSize>::splice(const_iterator pos, List& other, const_iterator it)
 {
     this->insert(pos, std::move(const_cast<T&>(*it)));
