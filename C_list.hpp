@@ -191,7 +191,7 @@ private:
     constexpr static Block* allocateBlock();
     template<Directions TDirection>
     constexpr Block* insertNewBlock(Block* block);
-    constexpr static void shiftBlockToFreeUpLastPosition(Block* block);
+    [[nodiscard]] constexpr static BlockIndex shiftBlockToFreeUpSpace(Block* block);
 
     constexpr void freeBlock(Block* block);
 

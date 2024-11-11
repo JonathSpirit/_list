@@ -292,18 +292,17 @@ constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(con
 
     if ((pos._block->_occupiedFlags & maskBefore) == maskBefore)
     {//We can't insert into the current block as it's full, we have to create a new block or shift last block
-        auto lastBlockInsertIndex = gIndexLast;
+        auto lastBlockInsertIndex = gIndexMid;
         Block* lastBlock = pos._block->_lastBlock;
 
         //We can check if we can insert into the last block
         if (lastBlock == nullptr || lastBlock->_occupiedFlags == std::numeric_limits<TBlockSize>::max())
         {//Well we can't do that, we have to create a new block
             lastBlock = this->insertNewBlock<Directions::FRONT>(pos._block);
-            lastBlockInsertIndex = gIndexMid;
         }
-        else if (lastBlock->_occupiedFlags & gPositionLast)
+        else
         {
-            shiftBlockToFreeUpLastPosition(lastBlock);
+            lastBlockInsertIndex = shiftBlockToFreeUpSpace(lastBlock);
         }
 
         if (maskBefore == 0)
@@ -594,27 +593,41 @@ constexpr typename List<T, TBlockSize>::Block* List<T, TBlockSize>::insertNewBlo
     }
 }
 template<class T, class TBlockSize>
-constexpr void List<T, TBlockSize>::shiftBlockToFreeUpLastPosition(Block* block)
+constexpr typename List<T, TBlockSize>::BlockIndex List<T, TBlockSize>::shiftBlockToFreeUpSpace(Block* block)
 {
-    //Find the first empty place from the end
-    TBlockSize emptyPlacePosition = gPositionLast;
-    T* data = reinterpret_cast<T*>(&block->_data) + gIndexLast;
+    TBlockSize emptyPlacePosition = gPositionFirst;
+    BlockIndex emptyIndex = 0;
+
+    TBlockSize dataPlacePosition = emptyPlacePosition;
+    T* data = reinterpret_cast<T*>(&block->_data) + emptyIndex;
     do
     {
-        emptyPlacePosition >>= 1;
-        --data;
-    }
-    while (block->_occupiedFlags & emptyPlacePosition);
-    block->_occupiedFlags |= emptyPlacePosition;
-    block->_occupiedFlags &=~ gPositionLast;
+        if (!(block->_occupiedFlags & emptyPlacePosition))
+        {
+            //Find the first data to move
+            do
+            {
+                dataPlacePosition <<= 1;
+                ++data;
+            }
+            while (block->_occupiedFlags & dataPlacePosition);
 
-    //Let's shift
-    for (TBlockSize iPos = emptyPlacePosition; iPos != gPositionLast; iPos <<= 1)
-    {
-        new (data) T(std::move(*(data+1)));
+            //Move the data
+            new (reinterpret_cast<T*>(&block->_data) + emptyIndex) T(std::move(*data));
+            block->_occupiedFlags |= emptyPlacePosition;
+            block->_occupiedFlags &=~ dataPlacePosition;
+            data->~T();
+        }
+
+        emptyPlacePosition <<= 1;
+        ++emptyIndex;
+
+        dataPlacePosition = emptyPlacePosition;
         ++data;
-        data->~T();
     }
+    while ((block->_occupiedFlags & ~(emptyPlacePosition-1)) == 0); //Until the block is fully shifted to the "right"
+
+    return emptyIndex;
 }
 
 template<class T, class TBlockSize>
