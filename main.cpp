@@ -17,12 +17,17 @@
 #define FIG_SIZE_W 800
 #define FIG_SIZE_H 600
 
+#define CHRONO_START auto start = std::chrono::high_resolution_clock::now();
+#define CHRONO_STOP auto stop = std::chrono::high_resolution_clock::now();
+#define CHRONO_TIME auto time = std::chrono::duration<double>(std::chrono::duration_cast<std::chrono::microseconds>(stop - start)).count(); std::cout << "time: " << time << '\n';
+
 using namespace matplot;
 
 using LogSteps = std::vector<uint32_t>;
 
 LogSteps BuildLogStep(uint32_t nLogStart, uint32_t nLogStop, uint32_t nLogCount)
 {
+    nLogCount = (nLogStop - nLogStart) * nLogCount;
     auto const dresult = logspace(nLogStart, nLogStop, nLogCount);
     LogSteps result(dresult.size());
     for (std::size_t i=0; i<dresult.size(); ++i)
@@ -38,7 +43,7 @@ void test_pushFront(std::string_view containerName, LogSteps const& steps)
     std::cout << "test: pushFront, on " << containerName << std::endl;
 
     std::vector<uint64_t> resultX;
-    std::vector<uint64_t> resultY;
+    std::vector<double> resultY;
 
     for (auto const iterations : steps)
     {
@@ -46,21 +51,19 @@ void test_pushFront(std::string_view containerName, LogSteps const& steps)
 
         TContainer testContainer{};
 
-        auto start = std::chrono::high_resolution_clock::now();
+        CHRONO_START
         for (uint32_t i = 0; i < iterations; ++i)
         {
             testContainer.push_front(typename TContainer::value_type{});
         }
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-        std::cout << "time: " << time << '\n';
+        CHRONO_STOP
+        CHRONO_TIME
 
         resultX.emplace_back(iterations);
         resultY.emplace_back(time);
     }
 
-    auto handle = semilogx(resultX, resultY);
+    auto handle = semilogy(resultX, resultY);
     handle->display_name(containerName);
     handle->line_width(3.0f);
     std::cout << "---" << std::endl;
@@ -71,7 +74,7 @@ void test_pushBack(std::string_view containerName, LogSteps const& steps)
     std::cout << "test: pushBack, on " << containerName << std::endl;
 
     std::vector<uint64_t> resultX;
-    std::vector<uint64_t> resultY;
+    std::vector<double> resultY;
 
     for (auto const iterations : steps)
     {
@@ -79,21 +82,19 @@ void test_pushBack(std::string_view containerName, LogSteps const& steps)
 
         TContainer testContainer{};
 
-        auto start = std::chrono::high_resolution_clock::now();
+        CHRONO_START
         for (uint32_t i = 0; i < iterations; ++i)
         {
             testContainer.push_back(typename TContainer::value_type{});
         }
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-        std::cout << "time: " << time << '\n';
+        CHRONO_STOP
+        CHRONO_TIME
 
         resultX.emplace_back(iterations);
         resultY.emplace_back(time);
     }
 
-    auto handle = semilogx(resultX, resultY);
+    auto handle = semilogy(resultX, resultY);
     handle->display_name(containerName);
     handle->line_width(3.0f);
     std::cout << "---" << std::endl;
@@ -104,24 +105,22 @@ void test_creation(std::string_view containerName, LogSteps const& steps)
     std::cout << "test: creation, on " << containerName << std::endl;
 
     std::vector<uint64_t> resultX;
-    std::vector<uint64_t> resultY;
+    std::vector<double> resultY;
 
     for (auto const iterations : steps)
     {
         std::cout << "\titerations: " << iterations << " ";
 
-        auto start = std::chrono::high_resolution_clock::now();
+        CHRONO_START
         TContainer testContainer{iterations};
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-        std::cout << "time: " << time << '\n';
+        CHRONO_STOP
+        CHRONO_TIME
 
         resultX.emplace_back(iterations);
         resultY.emplace_back(time);
     }
 
-    auto handle = semilogx(resultX, resultY);
+    auto handle = semilogy(resultX, resultY);
     handle->display_name(containerName);
     handle->line_width(3.0f);
     std::cout << "---" << std::endl;
@@ -132,25 +131,23 @@ void test_destruction(std::string_view containerName, LogSteps const& steps)
     std::cout << "test: destruction, on " << containerName << std::endl;
 
     std::vector<uint64_t> resultX;
-    std::vector<uint64_t> resultY;
+    std::vector<double> resultY;
 
     for (auto const iterations : steps)
     {
         std::cout << "\titerations: " << iterations << " ";
 
         auto* testContainer = new TContainer{iterations};
-        auto start = std::chrono::high_resolution_clock::now();
+        CHRONO_START
         delete testContainer;
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-        std::cout << "time: " << time << '\n';
+        CHRONO_STOP
+        CHRONO_TIME
 
         resultX.emplace_back(iterations);
         resultY.emplace_back(time);
     }
 
-    auto handle = semilogx(resultX, resultY);
+    auto handle = semilogy(resultX, resultY);
     handle->display_name(containerName);
     handle->line_width(3.0f);
     std::cout << "---" << std::endl;
@@ -161,14 +158,14 @@ void test_erase(std::string_view containerName, LogSteps const& steps)
     std::cout << "test: erase, on " << containerName << std::endl;
 
     std::vector<uint64_t> resultX;
-    std::vector<uint64_t> resultY;
+    std::vector<double> resultY;
 
     for (auto const iterations : steps)
     {
         std::cout << "\titerations: " << iterations << " ";
 
         TContainer testContainer{iterations};
-        auto start = std::chrono::high_resolution_clock::now();
+        CHRONO_START
         for (uint32_t i = 0; i < iterations; ++i)
         {
             auto itMiddle = testContainer.begin();
@@ -178,16 +175,14 @@ void test_erase(std::string_view containerName, LogSteps const& steps)
             }
             testContainer.erase(itMiddle);
         }
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-        std::cout << "time: " << time << '\n';
+        CHRONO_STOP
+        CHRONO_TIME
 
         resultX.emplace_back(iterations);
         resultY.emplace_back(time);
     }
 
-    auto handle = semilogx(resultX, resultY);
+    auto handle = semilogy(resultX, resultY);
     handle->display_name(containerName);
     handle->line_width(3.0f);
     std::cout << "---" << std::endl;
@@ -198,7 +193,7 @@ void test_insert(std::string_view containerName, LogSteps const& steps)
     std::cout << "test: insert, on " << containerName << std::endl;
 
     std::vector<uint64_t> resultX;
-    std::vector<uint64_t> resultY;
+    std::vector<double> resultY;
 
     for (auto const iterations : steps)
     {
@@ -212,21 +207,19 @@ void test_insert(std::string_view containerName, LogSteps const& steps)
             ++itMiddle;
         }
 
-        auto start = std::chrono::high_resolution_clock::now();
+        CHRONO_START
         for (uint32_t i = 0; i < iterations; ++i)
         {
             testContainer.insert(itMiddle, typename TContainer::value_type{});
         }
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-        std::cout << "time: " << time << '\n';
+        CHRONO_STOP
+        CHRONO_TIME
 
         resultX.emplace_back(iterations);
         resultY.emplace_back(time);
     }
 
-    auto handle = semilogx(resultX, resultY);
+    auto handle = semilogy(resultX, resultY);
     handle->display_name(containerName);
     handle->line_width(3.0f);
     std::cout << "---" << std::endl;
@@ -237,7 +230,7 @@ void test_iterations(std::string_view containerName, LogSteps const& steps)
     std::cout << "test: iterations, on " << containerName << std::endl;
 
     std::vector<uint64_t> resultX;
-    std::vector<uint64_t> resultY;
+    std::vector<double> resultY;
 
     for (auto const iterations : steps)
     {
@@ -245,18 +238,16 @@ void test_iterations(std::string_view containerName, LogSteps const& steps)
 
         TContainer testContainer{iterations};
 
-        auto start = std::chrono::high_resolution_clock::now();
+        CHRONO_START
         for (auto it=testContainer.begin(); it!=testContainer.end(); ++it) {}
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-
-        std::cout << "time: " << time << '\n';
+        CHRONO_STOP
+        CHRONO_TIME
 
         resultX.emplace_back(iterations);
         resultY.emplace_back(time);
     }
 
-    auto handle = semilogx(resultX, resultY);
+    auto handle = semilogy(resultX, resultY);
     handle->display_name(containerName);
     handle->line_width(3.0f);
     std::cout << "---" << std::endl;
@@ -322,12 +313,15 @@ int main()
         auto cfgLegend = legend({});
         cfgLegend->box(false);
         cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        cfgLegend->vertical_location(legend::vertical_alignment::top);
+        cfgLegend->font_size(8);
+        cfgLegend->num_columns(3);
         grid(true);
         hold(true);
         xlabel("iteration");
-        ylabel("time us");
+        ylabel("time s");
 
-        auto const steps = BuildLogStep(5, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 20);
         xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
         test_pushBack<std::list<std::string> >("std::list<std::string>", steps);
@@ -352,12 +346,15 @@ int main()
         auto cfgLegend = legend({});
         cfgLegend->box(false);
         cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        cfgLegend->vertical_location(legend::vertical_alignment::top);
+        cfgLegend->font_size(8);
+        cfgLegend->num_columns(3);
         grid(true);
         hold(true);
         xlabel("iteration");
-        ylabel("time us");
+        ylabel("time s");
 
-        auto const steps = BuildLogStep(5, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 20);
         xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
         test_creation<std::list<std::string> >("std::list<std::string>", steps);
@@ -382,12 +379,15 @@ int main()
         auto cfgLegend = legend({});
         cfgLegend->box(false);
         cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        cfgLegend->vertical_location(legend::vertical_alignment::top);
+        cfgLegend->font_size(8);
+        cfgLegend->num_columns(3);
         grid(true);
         hold(true);
         xlabel("iteration");
-        ylabel("time us");
+        ylabel("time s");
 
-        auto const steps = BuildLogStep(5, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 20);
         xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
         test_destruction<std::list<std::string> >("std::list<std::string>", steps);
@@ -412,12 +412,15 @@ int main()
         auto cfgLegend = legend({});
         cfgLegend->box(false);
         cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        cfgLegend->vertical_location(legend::vertical_alignment::top);
+        cfgLegend->font_size(8);
+        cfgLegend->num_columns(3);
         grid(true);
         hold(true);
         xlabel("iteration");
-        ylabel("time us");
+        ylabel("time s");
 
-        auto const steps = BuildLogStep(5, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 20);
         xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
         test_pushFront<std::list<std::string> >("std::list<std::string>", steps);
@@ -440,12 +443,15 @@ int main()
         auto cfgLegend = legend({});
         cfgLegend->box(false);
         cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        cfgLegend->vertical_location(legend::vertical_alignment::top);
+        cfgLegend->font_size(8);
+        cfgLegend->num_columns(3);
         grid(true);
         hold(true);
         xlabel("iteration");
-        ylabel("time us");
+        ylabel("time s");
 
-        auto const steps = BuildLogStep(4, 5, 10);
+        auto const steps = BuildLogStep(4, 5, 20);
         xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
         test_erase<std::list<std::string> >("std::list<std::string>", steps);
@@ -470,12 +476,15 @@ int main()
         auto cfgLegend = legend({});
         cfgLegend->box(false);
         cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        cfgLegend->vertical_location(legend::vertical_alignment::top);
+        cfgLegend->font_size(8);
+        cfgLegend->num_columns(3);
         grid(true);
         hold(true);
         xlabel("iteration");
-        ylabel("time us");
+        ylabel("time s");
 
-        auto const steps = BuildLogStep(5, 8, 10);
+        auto const steps = BuildLogStep(5, 8, 20);
         xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
 
         test_iterations<std::list<std::string> >("std::list<std::string>", steps);
@@ -500,10 +509,13 @@ int main()
         auto cfgLegend = legend({});
         cfgLegend->box(false);
         cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        cfgLegend->vertical_location(legend::vertical_alignment::top);
+        cfgLegend->font_size(8);
+        cfgLegend->num_columns(3);
         grid(true);
         hold(true);
         xlabel("iteration");
-        ylabel("time us");
+        ylabel("time s");
 
         auto const steps = BuildLogStep(6, 8, 20);
         xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
@@ -524,10 +536,13 @@ int main()
         auto cfgLegend = legend({});
         cfgLegend->box(false);
         cfgLegend->horizontal_location(legend::horizontal_alignment::left);
+        cfgLegend->vertical_location(legend::vertical_alignment::top);
+        cfgLegend->font_size(8);
+        cfgLegend->num_columns(3);
         grid(true);
         hold(true);
         xlabel("iteration");
-        ylabel("time us");
+        ylabel("time s");
 
         auto const steps = BuildLogStep(6, 8, 20);
         xrange({static_cast<double>(steps.front()), static_cast<double>(steps.back())});
