@@ -180,6 +180,11 @@ constexpr void List<T, TBlockSize>::pop_front()
 template<class T, class TBlockSize>
 constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::erase(const_iterator const& pos)
 {
+    if (pos._dataLocation._data == nullptr || pos._dataLocation._position == 0)
+    {//Nothing to erase
+        return this->end();
+    }
+
     //Prepare the next iterator
     iterator iteratorNext = pos;
     ++iteratorNext;
