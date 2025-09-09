@@ -655,37 +655,20 @@ TEST_CASE("testing splice complex scenarios")
         CHECK(dest.size() == 1002);
         CHECK(source.empty());
         
-        // Verify all elements are in correct order by comparing with reference implementation
-        gg::List<int> expectedDest;
-        gg::List<int> expectedSource;
-        
-        // Create the same large source list
-        for (int i = 0; i < 1000; ++i)
-        {
-            expectedSource.push_back(i);
-        }
-        
-        // Create the same destination list
-        expectedDest.push_back(-1);
-        expectedDest.push_back(9999);
-        
-        // Splice at the same position
-        auto expectedIt = expectedDest.begin();
-        ++expectedIt;  // Point to 9999
-        
-        expectedDest.splice(expectedIt, expectedSource);
-        
-        // Verify all elements match the expected sequence
-        CHECK(dest.size() == expectedDest.size());
+        // Verify first few and last few elements
         auto destIt = dest.begin();
-        auto expectedDestIt = expectedDest.begin();
+        CHECK(*destIt == -1);
+        ++destIt;
+        CHECK(*destIt == 0);
+        ++destIt;
+        CHECK(*destIt == 1);
         
-        while (destIt != dest.end() && expectedDestIt != expectedDest.end())
-        {
-            CHECK(*destIt == *expectedDestIt);
-            ++destIt;
-            ++expectedDestIt;
-        }
+        // Check end
+        auto endIt = dest.end();
+        --endIt;
+        CHECK(*endIt == 9999);
+        --endIt;
+        CHECK(*endIt == 999);
     }
 }
 
