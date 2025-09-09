@@ -630,7 +630,7 @@ constexpr typename List<T, TBlockSize>::BlockIndex List<T, TBlockSize>::shiftBlo
     BlockIndex emptyIndex = 0;
 
     TBlockSize dataPlacePosition = emptyPlacePosition;
-    T* data = reinterpret_cast<T*>(&block->_data) + emptyIndex;
+    T* data = reinterpret_cast<T*>(&block->_data);
     do
     {
         if (!(block->_occupiedFlags & emptyPlacePosition))
@@ -641,7 +641,7 @@ constexpr typename List<T, TBlockSize>::BlockIndex List<T, TBlockSize>::shiftBlo
                 dataPlacePosition <<= 1;
                 ++data;
             }
-            while (block->_occupiedFlags & dataPlacePosition);
+            while ((block->_occupiedFlags & dataPlacePosition) == 0);
 
             //Move the data
             new (reinterpret_cast<T*>(&block->_data) + emptyIndex) T(std::move(*data));
@@ -654,9 +654,9 @@ constexpr typename List<T, TBlockSize>::BlockIndex List<T, TBlockSize>::shiftBlo
         ++emptyIndex;
 
         dataPlacePosition = emptyPlacePosition;
-        ++data;
+        data = reinterpret_cast<T*>(&block->_data) + emptyIndex;
     }
-    while ((block->_occupiedFlags & ~(emptyPlacePosition-1)) == 0); //Until the block is fully shifted to the "right"
+    while ((block->_occupiedFlags & ~(emptyPlacePosition-1)) != 0); //Until the block is fully shifted to the "right"
 
     return emptyIndex;
 }
