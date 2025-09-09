@@ -601,7 +601,7 @@ TEST_CASE("testing erase and insert with large lists")
         
         CHECK(list.size() == 200);  // Original 100 + 100 inserted
         
-        // Verify first few elements are in order
+        // Verify that all elements are in order
         auto checkIt = list.begin();
         for (int i = 0; i < 200; ++i)
         {
