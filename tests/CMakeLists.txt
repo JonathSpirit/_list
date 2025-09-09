@@ -21,3 +21,10 @@ set(TESTS_DEPENDENCIES
 )
 
 simpleAddTest(basicListTests test_basic_list.cpp "${TESTS_DEPENDENCIES}")
+simpleAddTest(constructorsAssignmentsTests test_constructors_assignments.cpp "${TESTS_DEPENDENCIES}")
+simpleAddTest(modifiersTests test_modifiers.cpp "${TESTS_DEPENDENCIES}")
+simpleAddTest(iteratorsTests test_iterators.cpp "${TESTS_DEPENDENCIES}")
+simpleAddTest(elementAccessTests test_element_access.cpp "${TESTS_DEPENDENCIES}")
+simpleAddTest(eraseInsertTests test_erase_insert.cpp "${TESTS_DEPENDENCIES}")
+simpleAddTest(spliceTests test_splice.cpp "${TESTS_DEPENDENCIES}")
+simpleAddTest(edgeCasesTests test_edge_cases.cpp "${TESTS_DEPENDENCIES}")
