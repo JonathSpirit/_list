@@ -601,12 +601,40 @@ TEST_CASE("testing erase and insert with large lists")
         
         CHECK(list.size() == 150);  // Original 100 + 50 inserted
         
-        // Verify first few elements are in order
-        auto checkIt = list.begin();
-        for (int i = 0; i < 10; ++i)
+        // Verify all elements are in correct order by comparing actual result
+        // with the expected result from simulating the same operations
+        gg::List<int> expected;
+        
+        // Create expected list with even numbers
+        for (int i = 0; i < 100; ++i)
         {
-            CHECK(*checkIt == i);
-            ++checkIt;
+            expected.push_back(i * 2);
+        }
+        
+        // Insert odd numbers using the same logic
+        auto exp_it = expected.begin();
+        ++exp_it;  // Start after first even number
+        
+        for (int i = 1; i < 100; i += 2)
+        {
+            exp_it = expected.insert(exp_it, i);  // Insert odd number
+            ++exp_it;  // Move past inserted element
+            if (exp_it != expected.end())
+            {
+                ++exp_it;  // Move past next even number
+            }
+        }
+        
+        // Verify all elements match the expected sequence
+        CHECK(list.size() == expected.size());
+        auto listIt = list.begin();
+        auto expectedIt = expected.begin();
+        
+        while (listIt != list.end() && expectedIt != expected.end())
+        {
+            CHECK(*listIt == *expectedIt);
+            ++listIt;
+            ++expectedIt;
         }
     }
 }
