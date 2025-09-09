@@ -505,12 +505,28 @@ constexpr void List<T, TBlockSize>::splice(const_iterator pos, List&& other)
 template<class T, class TBlockSize>
 constexpr void List<T, TBlockSize>::splice(const_iterator pos, List& other, const_iterator it)
 {
+    if (this == &other)
+    {//In order to avoid invalidating the "it" iterator, we must use a temporary variable
+        T temporary{std::move(const_cast<T&>(*it))};
+        this->erase(it);
+        this->insert(pos, std::move(temporary));
+        return;
+    }
+
     this->insert(pos, std::move(const_cast<T&>(*it)));
     other.erase(it);
 }
 template<class T, class TBlockSize>
 constexpr void List<T, TBlockSize>::splice(const_iterator pos, List&& other, const_iterator it)
 {
+    if (this == &other)
+    {//In order to avoid invalidating the "it" iterator, we must use a temporary variable
+        T temporary{std::move(const_cast<T&>(*it))};
+        this->erase(it);
+        this->insert(pos, std::move(temporary));
+        return;
+    }
+
     this->insert(pos, std::move(const_cast<T&>(*it)));
     other.erase(it);
 }
