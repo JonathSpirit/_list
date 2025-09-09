@@ -599,7 +599,7 @@ TEST_CASE("testing erase and insert with large lists")
             }
         }
         
-        CHECK(list.size() == 149);  // Original 100 + 49 inserted
+        CHECK(list.size() == 150);  // Original 100 + 50 inserted
         
         // Verify first few elements are in order
         auto checkIt = list.begin();
