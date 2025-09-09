@@ -621,6 +621,11 @@ constexpr typename List<T, TBlockSize>::Block* List<T, TBlockSize>::insertNewBlo
         {
             this->g_startBlock = block->_lastBlock;
         }
+        else
+        {
+            oldBlock->_nextBlock = block->_lastBlock;
+        }
+
         return block->_lastBlock;
     }
     else
@@ -636,6 +641,11 @@ constexpr typename List<T, TBlockSize>::Block* List<T, TBlockSize>::insertNewBlo
         {
             this->g_lastBlock = block->_nextBlock;
         }
+        else
+        {
+            oldBlock->_lastBlock = block->_nextBlock;
+        }
+
         return block->_nextBlock;
     }
 }
