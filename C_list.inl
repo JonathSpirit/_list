@@ -92,28 +92,34 @@ List<T, TBlockSize>::~List()
 template<class T, class TBlockSize>
 constexpr List<T, TBlockSize>& List<T, TBlockSize>::operator=(List const& r)
 {
-    this->clear();
-    for (auto const& value : r)
+    if (this != &r)
     {
-        this->push_back(value);
+        this->clear();
+        for (auto const& value : r)
+        {
+            this->push_back(value);
+        }
     }
     return *this;
 }
 template<class T, class TBlockSize>
 constexpr List<T, TBlockSize>& List<T, TBlockSize>::operator=(List&& r) noexcept
 {
-    this->clear();
-    this->g_startBlock = r.g_startBlock;
-    this->g_lastBlock = r.g_lastBlock;
-    this->g_dataSize = r.g_dataSize;
-    this->g_cacheFrontIndex = r.g_cacheFrontIndex;
-    this->g_cacheBackIndex = r.g_cacheBackIndex;
+    if (this != &r)
+    {
+        this->clear();
+        this->g_startBlock = r.g_startBlock;
+        this->g_lastBlock = r.g_lastBlock;
+        this->g_dataSize = r.g_dataSize;
+        this->g_cacheFrontIndex = r.g_cacheFrontIndex;
+        this->g_cacheBackIndex = r.g_cacheBackIndex;
 
-    r.g_startBlock = nullptr;
-    r.g_lastBlock = nullptr;
-    r.g_dataSize = 0;
-    r.g_cacheFrontIndex = gIndexMid-1;
-    r.g_cacheBackIndex = gIndexMid;
+        r.g_startBlock = nullptr;
+        r.g_lastBlock = nullptr;
+        r.g_dataSize = 0;
+        r.g_cacheFrontIndex = gIndexMid-1;
+        r.g_cacheBackIndex = gIndexMid;
+    }
     return *this;
 }
 
@@ -149,7 +155,8 @@ template<class... TArgs>
 constexpr T& List<T, TBlockSize>::emplace_back(TArgs&&... value)
 {
     auto* data = this->requestFreePlace<Directions::BACK>()._data;
-    new (data) T(std::forward<TArgs...>(value...));
+    new (data) T(std::forward<TArgs>(value)...);
+    return *data;
 }
 template<class T, class TBlockSize>
 template<class U>
@@ -163,7 +170,8 @@ template<class... TArgs>
 constexpr T& List<T, TBlockSize>::emplace_front(TArgs&&... value)
 {
     auto* data = this->requestFreePlace<Directions::FRONT>()._data;
-    new (data) T(std::forward<TArgs...>(value...));
+    new (data) T(std::forward<TArgs>(value)...);
+    return *data;
 }
 
 template<class T, class TBlockSize>
