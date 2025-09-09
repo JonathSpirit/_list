@@ -589,7 +589,7 @@ TEST_CASE("testing erase and insert with large lists")
         auto it = list.begin();
         ++it;  // Start after first even number
         
-        for (int i = 1; i < 100; i += 2)
+        for (int i = 1; i < 200; i += 2)
         {
             it = list.insert(it, i);  // Insert odd number
             ++it;  // Move past inserted element
@@ -599,11 +599,11 @@ TEST_CASE("testing erase and insert with large lists")
             }
         }
         
-        CHECK(list.size() == 150);  // Original 100 + 50 inserted
+        CHECK(list.size() == 200);  // Original 100 + 100 inserted
         
         // Verify first few elements are in order
         auto checkIt = list.begin();
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < 200; ++i)
         {
             CHECK(*checkIt == i);
             ++checkIt;
