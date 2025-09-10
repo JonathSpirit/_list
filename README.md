@@ -1,6 +1,6 @@
 # _list
 
-Copyright (C) 2024 Guillaume Guillet
+Copyright (C) 2025 Guillaume Guillet
 
 <table border="0px">
 <tr>
