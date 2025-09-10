@@ -141,6 +141,7 @@ public:
     constexpr List(List const& r);
     constexpr List(List&& r) noexcept;
     constexpr explicit List(std::size_t size);
+    constexpr List(std::size_t size, const T& value);
     ~List();
 
     constexpr List& operator=(List const& r);

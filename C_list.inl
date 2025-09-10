@@ -73,7 +73,16 @@ constexpr List<T, TBlockSize>::List(std::size_t size) :
 {
     for (std::size_t i=0; i<size; ++i)
     {
-        this->push_back(T{});
+        this->emplace_back();
+    }
+}
+template<class T, class TBlockSize>
+constexpr List<T, TBlockSize>::List(std::size_t size, const T& value) :
+        List()
+{
+    for (std::size_t i=0; i<size; ++i)
+    {
+        this->push_back(value);
     }
 }
 template<class T, class TBlockSize>
