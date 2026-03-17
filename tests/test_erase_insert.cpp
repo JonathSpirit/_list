@@ -686,3 +686,211 @@ TEST_CASE("testing edge cases for erase and insert")
         }
     }
 }
+
+TEST_CASE("testing insert with std::string for move-assign optimization")
+{
+    SUBCASE("insert strings in middle triggers shift-left with move-assign")
+    {
+        // Use uint8_t block size (8 positions) to exercise block-full paths
+        gg::List<std::string, uint8_t> list;
+        // Fill a block to trigger the full-block insert path
+        for (int i = 0; i < 8; ++i)
+        {
+            list.push_back("elem_" + std::to_string(i));
+        }
+
+        CHECK(list.size() == 8);
+
+        // Insert in the middle, forcing a shift-left through the move-assign chain
+        auto it = list.begin();
+        for (int i = 0; i < 4; ++i) ++it;  // Point to elem_4
+
+        it = list.insert(it, "inserted_middle");
+
+        CHECK(list.size() == 9);
+        CHECK(*it == "inserted_middle");
+
+        // Verify ordering is preserved
+        auto checkIt = list.begin();
+        for (int i = 0; i < 4; ++i)
+        {
+            CHECK(*checkIt == "elem_" + std::to_string(i));
+            ++checkIt;
+        }
+        CHECK(*checkIt == "inserted_middle");
+        ++checkIt;
+        for (int i = 4; i < 8; ++i)
+        {
+            CHECK(*checkIt == "elem_" + std::to_string(i));
+            ++checkIt;
+        }
+    }
+
+    SUBCASE("insert strings repeatedly at same position")
+    {
+        gg::List<std::string, uint8_t> list;
+        list.push_back("anchor");
+
+        // Insert many strings before the anchor, exercising shift paths repeatedly
+        auto anchorIt = list.begin();
+        for (int i = 0; i < 20; ++i)
+        {
+            list.insert(anchorIt, "str_" + std::to_string(i));
+        }
+
+        CHECK(list.size() == 21);
+
+        // Verify all inserted strings are before anchor
+        auto it = list.begin();
+        for (int i = 0; i < 20; ++i)
+        {
+            CHECK(*it == "str_" + std::to_string(i));
+            ++it;
+        }
+        CHECK(*it == "anchor");
+    }
+
+    SUBCASE("insert large strings to exercise move semantics")
+    {
+        gg::List<std::string, uint16_t> list;
+        // Use strings larger than SSO to ensure heap-allocated moves
+        std::string longStr(100, 'x');
+
+        for (int i = 0; i < 20; ++i)
+        {
+            list.push_back(longStr + std::to_string(i));
+        }
+
+        auto it = list.begin();
+        for (int i = 0; i < 10; ++i) ++it;  // Point to element 10
+
+        std::string insertStr(100, 'y');
+        it = list.insert(it, insertStr + "inserted");
+
+        CHECK(list.size() == 21);
+        CHECK(*it == insertStr + "inserted");
+
+        // Verify element at position 10 is now the old element 10
+        ++it;
+        CHECK(*it == longStr + std::to_string(10));
+    }
+
+    SUBCASE("insert with different block sizes preserves correctness")
+    {
+        // Test with uint8_t (8 positions per block)
+        {
+            gg::List<std::string, uint8_t> list;
+            for (int i = 0; i < 50; ++i)
+            {
+                list.push_back(std::to_string(i * 2));
+            }
+
+            auto it = list.begin();
+            ++it;
+            for (int i = 0; i < 50; ++i)
+            {
+                it = list.insert(it, std::to_string(i * 2 + 1));
+                ++it;
+                if (it != list.end()) ++it;
+            }
+
+            CHECK(list.size() == 100);
+            auto checkIt = list.begin();
+            for (int i = 0; i < 100; ++i)
+            {
+                CHECK(*checkIt == std::to_string(i));
+                ++checkIt;
+            }
+        }
+        // Test with uint32_t (32 positions per block)
+        {
+            gg::List<std::string, uint32_t> list;
+            for (int i = 0; i < 50; ++i)
+            {
+                list.push_back(std::to_string(i * 2));
+            }
+
+            auto it = list.begin();
+            ++it;
+            for (int i = 0; i < 50; ++i)
+            {
+                it = list.insert(it, std::to_string(i * 2 + 1));
+                ++it;
+                if (it != list.end()) ++it;
+            }
+
+            CHECK(list.size() == 100);
+            auto checkIt = list.begin();
+            for (int i = 0; i < 100; ++i)
+            {
+                CHECK(*checkIt == std::to_string(i));
+                ++checkIt;
+            }
+        }
+    }
+
+    SUBCASE("insert after erase exercises Case 4 move-assign path")
+    {
+        gg::List<std::string, uint8_t> list;
+        for (int i = 0; i < 8; ++i)
+        {
+            list.push_back("item_" + std::to_string(i));
+        }
+
+        // Erase element at position 2 to create a gap
+        auto it = list.begin();
+        ++it; ++it;  // Point to item_2
+        list.erase(it);
+        CHECK(list.size() == 7);
+
+        // Now insert at position 5 (after the gap)
+        // This should trigger Case 4 (shift within block with gap)
+        it = list.begin();
+        for (int i = 0; i < 4; ++i) ++it;  // Should point to item_5
+
+        it = list.insert(it, "new_item");
+        CHECK(list.size() == 8);
+        CHECK(*it == "new_item");
+
+        // Verify order: item_0, item_1, item_3, item_4, new_item, item_5, item_6, item_7
+        std::vector<std::string> expected = {
+            "item_0", "item_1", "item_3", "item_4",
+            "new_item", "item_5", "item_6", "item_7"
+        };
+        auto checkIt = list.begin();
+        for (const auto& exp : expected)
+        {
+            CHECK(*checkIt == exp);
+            ++checkIt;
+        }
+    }
+
+    SUBCASE("iterator validity after insert")
+    {
+        gg::List<std::string> list;
+        list.push_back("A");
+        list.push_back("B");
+        list.push_back("C");
+
+        // Get iterator to B
+        auto itB = list.begin();
+        ++itB;
+        CHECK(*itB == "B");
+
+        // Insert before B
+        auto itNew = list.insert(itB, "X");
+
+        // itB should still point to B (iterator stability guarantee)
+        CHECK(*itB == "B");
+        CHECK(*itNew == "X");
+
+        // Verify full order
+        std::vector<std::string> expected = {"A", "X", "B", "C"};
+        auto checkIt = list.begin();
+        for (const auto& exp : expected)
+        {
+            CHECK(*checkIt == exp);
+            ++checkIt;
+        }
+    }
+}
