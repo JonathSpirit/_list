@@ -343,20 +343,19 @@ constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(con
         T* lastBlockData = reinterpret_cast<T*>(&lastBlock->_data) + lastBlockInsertIndex;
         T* data = reinterpret_cast<T*>(&pos._block->_data);
         new (lastBlockData) T(std::move(*data));
-        data->~T();
 
-        //Now we can shift the rest of the data
+        //Shift the rest of the data using move-assignment (avoids extra destroy+construct per element)
         for (TBlockSize iPos = gPositionFirst; iPos != pos._dataLocation._position>>1; iPos <<= 1)
         {
-            new (data) T(std::move(*(data+1)));
+            *data = std::move(*(data+1));
             ++data;
-            data->~T();
         }
 
-        //Insert the new value
+        //Insert the new value (destroy moved-from element and construct new)
         ++this->g_dataSize;
         pos._dataLocation._position >>= 1;
         pos._dataLocation._data = data;
+        data->~T();
         new (data) T(std::forward<U>(value));
         return pos;
     }
@@ -377,16 +376,24 @@ constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(con
     //We have to shift data inside the current block
     TBlockSize position = gPositionFirst;
     T* data = reinterpret_cast<T*>(pos._block->_data);
+    bool shifting = false;
     do
     {
         notOccupiedBefore &=~ position;
 
         if (notOccupiedBefore == 0)
-        {//We are in the last not occupied place
-            pos._block->_occupiedFlags |= position;
-            new (data) T(std::move(*(data+1)));
+        {
+            if (!shifting)
+            {//First shift: into unoccupied slot, must use placement-new
+                pos._block->_occupiedFlags |= position;
+                new (data) T(std::move(*(data+1)));
+                shifting = true;
+            }
+            else
+            {//Subsequent shifts: into moved-from slot, use move-assign
+                *data = std::move(*(data+1));
+            }
             ++data;
-            data->~T();
         }
         else
         {
@@ -400,6 +407,7 @@ constexpr typename List<T, TBlockSize>::iterator List<T, TBlockSize>::insert(con
     ++this->g_dataSize;
     pos._dataLocation._position = position;
     pos._dataLocation._data = data;
+    data->~T();
     new (data) T(std::forward<U>(value));
     return pos;
 }
@@ -661,6 +669,20 @@ constexpr typename List<T, TBlockSize>::Block* List<T, TBlockSize>::insertNewBlo
 template<class T, class TBlockSize>
 constexpr typename List<T, TBlockSize>::BlockIndex List<T, TBlockSize>::shiftBlockToFreeUpSpace(Block* block)
 {
+    //Fast path: if the highest bit is not occupied, free space is already at the end
+    //No element moves needed - just find the index after the highest occupied position
+    if (!(block->_occupiedFlags & gPositionLast))
+    {
+        BlockIndex insertIndex = gIndexLast;
+        TBlockSize tmpPos = gPositionLast;
+        while (!(block->_occupiedFlags & tmpPos))
+        {
+            tmpPos >>= 1;
+            --insertIndex;
+        }
+        return insertIndex + 1;
+    }
+
     TBlockSize emptyPlacePosition = gPositionFirst;
     BlockIndex emptyIndex = 0;
 
